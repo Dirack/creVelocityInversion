@@ -26,6 +26,7 @@ from madagascarRecipes.errorReport import print_build_failures
 from madagascarRecipes.pefInterpolation import pefInterpolation as pefin
 from madagascarRecipes.kimodel import multiLayerModel as mlmod
 from madagascarRecipes.kimodel import kirchoffNewtonModeling as kinewmod
+from madagascarRecipes.velocityAnalisys import velocityAnalisys as nmoStack
 
 xmax = 6.0
 zmax = 2.0
@@ -50,6 +51,25 @@ kinewmod(reflectors='interfaces',
 	reflectorsDip='interfacesDip',
 	filename='multiLayerDataCube',
 	velocities=velocities)
+
+nmoStack(dataCube='multiLayerDataCube',
+	pick='vnmo',
+	stack='stackedSection',
+	vrms='vrms',
+	v0=1.5,
+	dv=0.01,
+	nv=100,
+	vel0=1.5,
+	rect1=15,
+	rect2=40,
+	rect3=3,
+	dt=0.004)
+
+Flow('kirchhoffSection',['stackedSection','vrms'],
+	'''
+	kirchnew velocity=${SOURCES[1]}
+	'''
+	)
 
 # Use aliases to split building
 Alias('model','multiLayerDataCube.rsf')

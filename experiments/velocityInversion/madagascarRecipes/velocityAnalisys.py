@@ -35,10 +35,9 @@ from rsf.proj import *
 __author__="Rodolfo Dirack <rodolfo_profissional@hotmail.com>"
 __version__="1.0"
 
-def velocityAnalisys(
-	dataCube,
+def velocityAnalisys(dataCube,
 	pick,
-	nmo,
+	stack,
 	vrms,
 	v0,
 	dv,
@@ -47,7 +46,7 @@ def velocityAnalisys(
 	rect1=15,
 	rect2=40,
 	rect3=3,
-	dt=0.004)
+	dt=0.004):
 	'''
 	Velocity analisys and automatic picking and semblance
 	:param datacube: RSF filename, (time, offset, CMP) datacube

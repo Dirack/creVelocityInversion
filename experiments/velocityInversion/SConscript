@@ -74,20 +74,37 @@ Flow('kirchhoffSection',['stackedSection','vrms'],
 	'''
 	)
 
+# Convert RMS velocity to Dix velocity
+Flow(['vdix','vout'],'vrms','dix vrmsout=${TARGETS[1]}')
+
 # Time to depth Conversion
+# Depth velocity model
 nz = 199
 dz = 0.01
-Flow('depthVelModel',['kirchhoffSection','vrms'],
+Flow('depthVelModel','vrms',
+	'''
+	time2depth velocity=$SOURCES nz=%i dz=%g intime=y twoway=y |
+	put label1=Depth unit1=Km
+	''' % (nz,dz))
+
+# Depth section
+Flow('depthSection',['kirchhoffSection','vrms'],
 	'''
 	time2depth velocity=${SOURCES[1]} nz=%i dz=%g intime=y |
 	put label1=Depth unit1=Km
 	''' % (nz,dz))
 
+# Iterative time to depth conversion
+Flow('t2d tt2d xt2d ft2d gt2d ct2d','depthVelModel vrms',
+	'''
+	tdconvert niter=3 verb=y cgiter=2000 eps=5 shape=y rect1=4 rect2=15 dix=${SOURCES[1]}
+	t0=${TARGETS[1]} x0=${TARGETS[2]} f0=${TARGETS[3]} grad=${TARGETS[4]} cost=${TARGETS[5]}
+	''')
+
 # Use aliases to split building
 Alias('model','multiLayerDataCube.rsf')
 
 # Show error message if fail
-
 message = '''
 SCosncript Failed build
 '''

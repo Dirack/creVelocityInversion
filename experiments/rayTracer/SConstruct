@@ -22,6 +22,9 @@ raysfile='rays'
 modelfile='model'
 overlay='ovelay'
 escfile='esc'
+a0=-45
+nr=10
+amax=45
 
 xmax = 6.0
 zmax = 2.0
@@ -38,7 +41,7 @@ dipsfile = 'dipsfile'
 ascInterfaces = 'layers.asc' 
 layersFile = 'layers' 
 
-layers = [0.65,0.85,0.55,0.65]
+layers = [0.65,0.65,0.65,0.65]
 #layers = map(lambda x: x+uniform(-0.1,0.1),layers)
 velocities = [1.508,2.0]
 
@@ -73,14 +76,14 @@ Flow(modelfile,interfaces,
 # Shoot ray in the model
 Flow(raysfile,modelfile,
 		'''
-		rays2 yshot=3 zshot=1 nt=10000 dt=0.01 a0=50 amax=200 nr=1 escvar=n
-		''')
+		rays2 yshot=3 zshot=1 nt=10000 dt=0.01 a0=%g amax=%g nr=%i escvar=n
+		''' % (a0,amax,nr))
 
 # Keep escape values of rays (z,x,t,angle)
 Flow(escfile,modelfile,
 		'''
-		rays2 yshot=3 zshot=1 nt=10000 dt=0.01 a0=50 amax=200 nr=1 escvar=y
-		''')
+		rays2 yshot=3 zshot=1 nt=10000 dt=0.01 a0=%g amax=%g nr=%i escvar=y
+		''' % (a0,amax,nr))
 
 # plot the model
 Plot(modelfile,'grey color=j scalebar=y label1=Depth unit1=km label2=Position unit2=km barlabel=Velocity barunit=km/s barreverse=y title=Model allpos=y')

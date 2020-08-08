@@ -36,15 +36,18 @@ def arr2str(array,sep=' '):
 	return string.join(map(str,array),sep)
 
 # Velocity Model update
-for i in range(2):
+for i in range(1):
 
 	interfaces = 'iterfaces-%i' %i
 	dipsfile = 'dipsfile-%i' %i
 	modelfile = 'model-%i' %i
 	ascInterfaces = 'layers-%i.asc' %i
 	layersFile = 'layers-%i' %i 
+	raysfile = 'rays-%i' %i
+	huygens = 'huygens-%i' %i
+	overlay = 'overlay-%i' %i
 
-	layers = [1.65,1.85,1.55,1.65]
+	layers = [0.65,0.85,0.55,0.65]
 	layers = map(lambda x: x+uniform(-0.1,0.1),layers)
 
 	velocities = [1.508,2.0]
@@ -63,7 +66,7 @@ for i in range(2):
 
 	Flow(layersFile,ascInterfaces,'dd form=native')
 
-	d = 0.0101 # non-round for reproducibility
+	d = 0.00101 # non-round for reproducibility
 
 	Flow(interfaces,layersFile,
 	     'spline o1=0 d1=%g n1=%d' % (d,int(1.5+xmax/d)))
@@ -71,8 +74,32 @@ for i in range(2):
 
 	Flow(modelfile,interfaces,
 	     '''
-	     unif2 d1=%g n1=%d v00=%s
+	     unif2 d1=%g n1=%d v00=%s 
 	     ''' % (d,int(1.5+zmax/d),vstr))
+
+	Flow(raysfile,modelfile,
+		'''
+		rays2 yshot=3 zshot=1 nt=10000 dt=0.01 a0=50 amax=200 nr=1 escvar=n
+		''')
+
+#	Flow(huygens,modelfile,
+#		'''
+#		smooth repeat=3 rect1=5 rect2=3 |
+#		hwt2d xsou=0 zsou=3 nt=1000 d1=0.01 ng=1801 og=90 dg=1 rays=y
+#		''')
+
+	# plot the model
+	Plot(modelfile,'grey color=j scalebar=y label1=Depth unit1=km label2=Position unit2=km barlabel=Velocity barunit=km/s barreverse=y title=Model allpos=y')
+
+	# plot the ray
+	Plot(raysfile,'graph transp=y yreverse=y min1=0 max1=2 min2=0 max2=6 wantaxis=n wanttitle=n scalebar=y plotcol=7 plotfat=3')
+
+	# plot the ray
+#	Plot(huygens,'graph transp=n yreverse=y min1=0 max1=2 min2=0 max2=6 wantaxis=n wanttitle=n scalebar=y plotcol=7 plotfat=3')
+
+
+	# overlay model and ray
+	Result(overlay,[modelfile, raysfile],'Overlay')
 
 # Show error message if fail
 message = '''

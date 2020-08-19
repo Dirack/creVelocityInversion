@@ -20,8 +20,8 @@ from rsf.proj import *
 
 # Personal Madagascar recipes
 from rsf.recipes.kimodel import multiLayerModel as mlmod
-from rsf.recipes.kimodel import kirchoffNewtonModeling as kinewmod
-from rsf.recipes.velocityAnalisys import velocityAnalisys as nmoStack
+from rsf.recipes.kimodel import kirchhoffNewtonModeling as kinewmod
+from rsf.recipes.velocityAnalysis import velocityAnalysis as nmoStack
 
 # Velocity continuation recipe
 from rsf.recipes.velcon import velcon
@@ -48,7 +48,13 @@ mlmod(interfaces='interfaces',
 kinewmod(reflectors='interfaces',
 	reflectorsDip='interfacesDip',
 	filename='multiLayerDataCube',
-	velocities=velocities)
+	velocities=velocities,
+	nt=1001,
+	dt=0.004,
+	ns=201,
+	ds=0.025,
+	nh=161,
+	dh=0.025)
 
 Flow('dataTransposed','multiLayerDataCube','transp plane=23 | transp plane=34')
 
@@ -74,7 +80,21 @@ velcon(data='dataTransposed',        # data name
            srect2=1,    # semblance lateral smoothing
            rect1=10,    # vertical smoothing
            rect2=10)   # lateral  smoothing
- 
+
+# velocity analysis, NMO correction and stack
+nmoStack(dataCube='multiLayerDataCube',
+	pick='vnmo',
+	stack='stackedSection',
+	vrms='vrms',
+	v0=1.5,
+	dv=0.01,
+	nv=100,
+	vel0=1.5,
+	rect1=15,
+	rect2=40,
+	rect3=3,
+	dt=0.004)
+
 # Post-stack velocity continuation
 Flow('velocityCube','stackedSection',
 	'''
@@ -86,6 +106,9 @@ Flow('velocityCube','stackedSection',
 	''')
 
 # Use aliases to split building
+# Call it 'scons alias' to build
+# target identified by alias
 Alias('model','multiLayerDataCube.rsf')
+Alias('stack','velocityCube.rsf')
 
 End()

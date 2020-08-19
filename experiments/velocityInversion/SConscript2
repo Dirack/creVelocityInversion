@@ -33,6 +33,7 @@ from rsf.recipes.velcon import velcon
 
 Flow('dataTransposed','multiLayerDataCube','transp plane=23 | transp plane=34')
 
+# Pre-stack velocity continuation
 velcon(data='dataTransposed',        # data name
            nv=100,          # continuation steps
            v0=1.5,          # initial velocity
@@ -55,6 +56,15 @@ velcon(data='dataTransposed',        # data name
            rect1=10,    # vertical smoothing
            rect2=10)   # lateral  smoothing
  
+# Post-stack velocity continuation
+Flow('velcon','stackedSection',
+	'''
+	pad beg2=200 end2=200 | cosft sign2=1 |
+	stolt vel=1.5 |
+	vczo v0=1.5 dv=0.01 nv=100 verb=y |
+	transp plane=23 | cosft sign2=-1 |
+	window min2=0 max2=5
+	''')
 
 # Show error message if fail
 message = '''

@@ -108,7 +108,21 @@ Flow('velocityCube','stackedSection',
 # Reflector iterative Picking
 Flow('reflectorPickedPoints.txt','stackedSection',
 	'''
-	ipick | tr '\t' ' '
+	ipick
+	''')
+
+# Build t0 coordinates file
+Flow('t0s.txt','reflectorPickedPoints.txt',
+	'''
+	tr '\\t' ' ' |
+	/usr/bin/cut -d' ' -f1
+	''')
+
+# Build m0 coordinates file
+Flow('m0s.txt','reflectorPickedPoints.txt',
+	'''
+	tr '\\t' ' ' |
+	/usr/bin/cut -d' ' -f2
 	''')
 
 # Use aliases to split building

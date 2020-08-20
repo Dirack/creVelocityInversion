@@ -105,6 +105,12 @@ Flow('velocityCube','stackedSection',
 	window min2=0 max2=5
 	''')
 
+# Reflector iterative Picking
+Flow('reflectorPickedPoints.txt','stackedSection',
+	'''
+	ipick | tr '\t' ' '
+	''')
+
 # Use aliases to split building
 # Call it 'scons alias' to build
 # target identified by alias

@@ -32,4 +32,4 @@ else
 	exit 1
 fi
 
-echo "${FORMATED_INPUT}n1=$NUMBER_OF_POINTS d1=1 o1=0 data_format=ascii_float in=${FILE}.asc"
+echo "${FORMATED_INPUT}n1=$NUMBER_OF_POINTS d1=1 o1=0 data_format=ascii_float in=$2"

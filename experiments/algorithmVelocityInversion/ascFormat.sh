@@ -21,8 +21,10 @@ INPUT=$(cat "-" | tr '\t' ' ' | cut -d' ' -f"$1")
 NUMBER_OF_POINTS=$(echo "$INPUT" | wc -l)
 FORMATED_INPUT=$(echo "$INPUT" | tr '\n' ' ')
 
-FILE="t0s"
-if [ "$1" == "2" ]
+if [ "$1" == "1" ]
+then
+	FILE="t0s"
+elif [ "$1" == "2" ]
 then
 	FILE="m0s"
 else

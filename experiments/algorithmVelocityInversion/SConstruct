@@ -111,18 +111,18 @@ Flow('reflectorPickedPoints.txt','stackedSection',
 	ipick
 	''')
 
-# Build t0 coordinates file
-Flow('t0s.txt','reflectorPickedPoints.txt',
+# Next step is done with 'ascFormat.sh' Shell Script
+# please check if the script have permissions to execute
+# Build t0 coordinates file (pass 1 to generate t0s file)
+Flow('t0s.asc','reflectorPickedPoints.txt',
 	'''
-	tr '\\t' ' ' |
-	/usr/bin/cut -d' ' -f1
+	./ascFormat.sh 1
 	''')
 
-# Build m0 coordinates file
-Flow('m0s.txt','reflectorPickedPoints.txt',
+# Build m0 coordinates file (pass 2 to generate m0s file)
+Flow('m0s.asc','reflectorPickedPoints.txt',
 	'''
-	tr '\\t' ' ' |
-	/usr/bin/cut -d' ' -f2
+	./ascFormat.sh 2
 	''')
 
 # Build velocity files

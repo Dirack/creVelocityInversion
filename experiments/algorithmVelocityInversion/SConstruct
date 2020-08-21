@@ -119,11 +119,15 @@ Flow('t0s.asc','reflectorPickedPoints.txt',
 	./ascFormat.sh 1
 	''')
 
+Flow('t0s','t0s.asc','sfdd form=native')
+
 # Build m0 coordinates file (pass 2 to generate m0s file)
 Flow('m0s.asc','reflectorPickedPoints.txt',
 	'''
 	./ascFormat.sh 2
 	''')
+
+Flow('m0s','m0s.asc','sfdd form=native')
 
 # Build velocity files
 Flow('v.asc',None,

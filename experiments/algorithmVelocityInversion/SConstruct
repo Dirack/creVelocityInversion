@@ -129,15 +129,11 @@ Flow('m0s.asc','reflectorPickedPoints.txt',
 
 Flow('m0s','m0s.asc','sfdd form=native')
 
-# Build velocity files
-Flow('v.asc',None,
+# Diffraction simulation in stacked section
+Flow(['returnedSection','diffSection'],['stackedSection','t0s','m0s'],
 	'''
-	echo %s %s
-	n1=2 o1=0 d1=1
-	data_format=ascii_float in=$TARGET
-	''' % (velocities[0],velocities[1]))
-
-Flow('v','v.asc','dd form=native')
+	diffsim diff=${TARGETS[1]} t0=${SOURCES[1]} m0=${SOURCES[2]} v=%g freq=10 verb=y
+	''' % (velocities[0]))
 
 # Use aliases to split building
 # Call it 'scons alias' to build

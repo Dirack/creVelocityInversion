@@ -105,35 +105,51 @@ Flow('velocityCube','stackedSection',
 	window min2=0 max2=5
 	''')
 
-# Reflector iterative Picking
-Flow('reflectorPickedPoints.txt','stackedSection',
-	'''
-	ipick
-	''')
+# Loop over reflectors
+numberOfReflectors = len(layers)
+section = 'stackedSection'
 
-# Next step is done with 'ascFormat.sh' Shell Script
-# please check if the script have permissions to execute
-# Build t0 coordinates file (pass 1 to generate t0s file)
-Flow('t0s.asc','reflectorPickedPoints.txt',
-	'''
-	./ascFormat.sh 1
-	''')
+for i in range(numberOfReflectors):
 
-Flow('t0s','t0s.asc','sfdd form=native')
+	reflectorPickedPoints = 'reflectorPickedPoints-%i.txt' % i
+	t0sFile = 't0s-%i' % i
+	t0sAscii = 't0s-%i.asc' %i
+	m0sFile = 'm0s-%i' % i
+	m0sAscii = 'm0s-%i.asc' % i
+	returnedSection = 'returnedSection-%i' % i
+	diffSection = 'diffSection-%i' % i
 
-# Build m0 coordinates file (pass 2 to generate m0s file)
-Flow('m0s.asc','reflectorPickedPoints.txt',
-	'''
-	./ascFormat.sh 2
-	''')
+	# Reflector iterative Picking
+	Flow(reflectorPickedPoints,section,
+		'''
+		ipick
+		''')
 
-Flow('m0s','m0s.asc','sfdd form=native')
+	# Next step is done with 'ascFormat.sh' Shell Script
+	# please check if the script have permissions to execute
+	# Build t0 coordinates file (pass 1 to generate t0s file)
+	Flow(t0sAscii,reflectorPickedPoints,
+		'''
+		./ascFormat.sh 1 %s
+		''' % (t0sAscii))
 
-# Diffraction simulation in stacked section
-Flow(['returnedSection','diffSection'],['stackedSection','t0s','m0s'],
-	'''
-	diffsim diff=${TARGETS[1]} t0=${SOURCES[1]} m0=${SOURCES[2]} v=%g freq=10 verb=y
-	''' % (velocities[0]))
+	Flow(t0sFile,t0sAscii,'sfdd form=native')
+
+	# Build m0 coordinates file (pass 2 to generate m0s file)
+	Flow(m0sAscii,reflectorPickedPoints,
+		'''
+		./ascFormat.sh 2 %s
+		''' % (m0sAscii))
+
+	Flow(m0sFile,m0sAscii,'sfdd form=native')
+
+	# Diffraction simulation in stacked section
+	Flow([returnedSection,diffSection],[section,t0sFile,m0sFile],
+		'''
+		diffsim diff=${TARGETS[1]} t0=${SOURCES[1]} m0=${SOURCES[2]} v=%g freq=10 verb=y
+		''' % (velocities[i]))
+
+	section = returnedSection
 
 # Use aliases to split building
 # Call it 'scons alias' to build

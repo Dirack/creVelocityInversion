@@ -22,6 +22,7 @@ from rsf.proj import *
 from rsf.recipes.kimodel import multiLayerModel as mlmod
 from rsf.recipes.kimodel import kirchhoffNewtonModeling as kinewmod
 from rsf.recipes.velocityAnalysis import velocityAnalysis as nmoStack
+from rsf.recipes.diff import diffmig as diff
 
 # Velocity continuation recipe
 from rsf.recipes.velcon import velcon
@@ -146,10 +147,40 @@ for i in range(numberOfReflectors):
 	# Diffraction simulation in stacked section
 	Flow([returnedSection,diffSection],[section,t0sFile,m0sFile],
 		'''
-		diffsim diff=${TARGETS[1]} t0=${SOURCES[1]} m0=${SOURCES[2]} v=%g freq=10 verb=y
+		diffsim diff=${TARGETS[1]} aperture=0.5
+		t0=${SOURCES[1]} m0=${SOURCES[2]} v=%g freq=10 verb=y
 		''' % (velocities[i]))
 
 	section = returnedSection
+
+Flow('diffAdd',['diffSection-0','diffSection-1'],'sfadd ${SOURCES[1]} scale=1,1')
+
+diff("diff",
+	'diffAdd',
+	v0=1.5,
+	nv=20,
+	dv=0.1,
+	nx=201,
+	padx=1000,
+	nt=1000,
+	tmin=0,
+	tmax=4,
+            rect1=10,
+            rect2=10,
+            srect1=1,
+            srect2=3,
+            vslope=None,
+            units='Km',
+            f1=1,
+            j3=1,
+            dx=0.025,
+            x0=0,
+            beg1=0,
+            frect1=0,
+            frect2=0,
+            an=1,
+            nout=2048,
+            vx0=None)
 
 # Use aliases to split building
 # Call it 'scons alias' to build

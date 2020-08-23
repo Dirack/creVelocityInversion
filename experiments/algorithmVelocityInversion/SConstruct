@@ -147,7 +147,7 @@ for i in range(numberOfReflectors):
 	# Diffraction simulation in stacked section
 	Flow([returnedSection,diffSection],[section,t0sFile,m0sFile],
 		'''
-		diffsim diff=${TARGETS[1]} aperture=0.5
+		diffsim diff=${TARGETS[1]} aperture=1
 		t0=${SOURCES[1]} m0=${SOURCES[2]} v=%g freq=10 verb=y
 		''' % (velocities[i]))
 

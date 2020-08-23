@@ -157,9 +157,9 @@ Flow('diffAdd',['diffSection-0','diffSection-1'],'sfadd ${SOURCES[1]} scale=1,1'
 
 diff("diff",
 	'diffAdd',
-	v0=1.5,
-	nv=20,
-	dv=0.1,
+	v0=1.4,
+	nv=100,
+	dv=0.01,
 	nx=201,
 	padx=1000,
 	nt=1000,

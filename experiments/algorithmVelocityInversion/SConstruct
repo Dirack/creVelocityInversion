@@ -129,7 +129,7 @@ diff("diff",
 	dv=0.01,
 	nx=201,
 	padx=1000,
-	nt=1000,
+	nt=1001,
 	tmin=0,
 	tmax=4,
 	rect1=10,
@@ -148,6 +148,26 @@ diff("diff",
 	an=1,
 	nout=2048,
 	vx0=None)
+
+Flow('vd x z','diff-pik',
+	'''
+	ve2d nt=1001 dt=0.004 x=${TARGETS[1]} z=${TARGETS[2]} | 
+	put label2=Time unit2=s
+	''')
+
+nz=100
+dz=0.1
+Flow('vf x0 t0','vd',
+	'''
+	cameron2d method=cheb nz=%d dz=%g x0=${TARGETS[1]} t0=${TARGETS[2]} |
+	put label2=Depth unit2=km
+	'''%(nz,dz))
+
+Flow('vd2','vd',
+       '''
+       transp | time2depth velocity=$SOURCE nz=%d dz=%g z0=0 intime=y |
+       put label1=Depth unit1=km | transp
+       ''' % (nz,dz))
 
 # Use aliases to split building
 # Call it 'scons alias' to build

@@ -1,0 +1,191 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+# SConstruct  (Madagascar Script)
+#
+# Purpose: Scratch of velocity inversion algorithm.
+#
+# Site: http://www.dirackslounge.online
+# 
+# Version 1.0
+#
+# Programer: Rodolfo A. C. Neves (Dirack) 19/08/2020
+#
+# Email: rodolfo_profissional@hotmail.com
+#
+# License: GPL-3.0 <https://www.gnu.org/licenses/gpl-3.0.txt>.
+
+# Madagascar package
+from rsf.proj import *
+
+# Personal Madagascar recipes
+from rsf.recipes.kimodel import multiLayerModel as mlmod
+from rsf.recipes.kimodel import kirchhoffNewtonModeling as kinewmod
+from rsf.recipes.velocityAnalysis import velocityAnalysis as nmoStack
+from rsf.recipes.diff import diffmig as diff
+
+# Velocity continuation recipe
+from rsf.recipes.velcon import velcon
+
+xmax = 6.0
+zmax = 2.0
+
+layers = ((0.30,0.50,0.20,0.30),
+	  (1.65,1.85,1.55,1.65))
+
+velocities = (1.508,
+	      1.690,
+	      2.0)
+
+# Generate multi layer model and data cube
+mlmod(interfaces='interfaces',
+	dipsfile='interfacesDip',
+	modelfile='mod1',
+	xmax=xmax,
+	zmax=zmax,
+	layers=layers,
+	velocities=velocities)
+
+kinewmod(reflectors='interfaces',
+	reflectorsDip='interfacesDip',
+	filename='multiLayerDataCube',
+	velocities=velocities,
+	nt=1001,
+	dt=0.004,
+	ns=201,
+	ds=0.025,
+	nh=161,
+	dh=0.025)
+
+Flow('dataTransposed','multiLayerDataCube','transp plane=23 | transp plane=34')
+
+# Pre-stack velocity continuation
+velcon(data='dataTransposed',        # data name
+           nv=100,          # continuation steps
+           v0=1.5,          # initial velocity
+           dv=0.01,          # velocity step
+           nx=201,          # lateral dimension
+           nh=161,          # number of offsets
+           padt=1024,        # time padding
+           padt2=2048,       # extra time padding
+           padx=None,   # lateral padding
+           v1=None,     # other velocity
+           n1=None,     # time extent
+           dt=0.004,    # time sampling
+           dx=0.025,     # midpoint sampling
+           units='km',  # lateral units
+           vslope=None, # semblance muting
+           vx0=0,       # semblance muting
+           x0=0,        # lateral origin
+           srect1=3,    # semblance vertical smoothing
+           srect2=1,    # semblance lateral smoothing
+           rect1=10,    # vertical smoothing
+           rect2=10)   # lateral  smoothing
+
+# velocity analysis, NMO correction and stack
+nmoStack(dataCube='multiLayerDataCube',
+	pick='vnmo',
+	stack='stackedSection',
+	vrms='vrms',
+	v0=1.5,
+	dv=0.01,
+	nv=100,
+	vel0=1.5,
+	rect1=15,
+	rect2=40,
+	rect3=3,
+	dt=0.004)
+
+# Post-stack velocity continuation
+Flow('velocityCube','stackedSection',
+	'''
+	pad beg2=200 end2=200 | cosft sign2=1 |
+	stolt vel=1.5 |
+	vczo v0=1.5 dv=0.01 nv=100 verb=y |
+	transp plane=23 | cosft sign2=-1 |
+	window min2=0 max2=5
+	''')
+
+# Loop over reflectors
+numberOfReflectors = len(layers)
+section = 'stackedSection'
+
+for i in range(numberOfReflectors):
+
+	reflectorPickedPoints = 'reflectorPickedPoints-%i.txt' % i
+	t0sFile = 't0s-%i' % i
+	t0sAscii = 't0s-%i.asc' %i
+	m0sFile = 'm0s-%i' % i
+	m0sAscii = 'm0s-%i.asc' % i
+	returnedSection = 'returnedSection-%i' % i
+	diffSection = 'diffSection-%i' % i
+
+	# Reflector iterative Picking
+	Flow(reflectorPickedPoints,section,
+		'''
+		ipick
+		''')
+
+	# Next step is done with 'ascFormat.sh' Shell Script
+	# please check if the script have permissions to execute
+	# Build t0 coordinates file (pass 1 to generate t0s file)
+	Flow(t0sAscii,reflectorPickedPoints,
+		'''
+		./ascFormat.sh 1 %s
+		''' % (t0sAscii))
+
+	Flow(t0sFile,t0sAscii,'sfdd form=native')
+
+	# Build m0 coordinates file (pass 2 to generate m0s file)
+	Flow(m0sAscii,reflectorPickedPoints,
+		'''
+		./ascFormat.sh 2 %s
+		''' % (m0sAscii))
+
+	Flow(m0sFile,m0sAscii,'sfdd form=native')
+
+	# Diffraction simulation in stacked section
+	Flow([returnedSection,diffSection],[section,t0sFile,m0sFile],
+		'''
+		diffsim diff=${TARGETS[1]} aperture=1
+		t0=${SOURCES[1]} m0=${SOURCES[2]} v=%g freq=10 verb=y
+		''' % (velocities[i]))
+
+	section = returnedSection
+
+Flow('diffAdd',['diffSection-0','diffSection-1'],'sfadd ${SOURCES[1]} scale=1,1')
+
+diff("diff",
+	'diffAdd',
+	v0=1.4,
+	nv=100,
+	dv=0.01,
+	nx=201,
+	padx=1000,
+	nt=1000,
+	tmin=0,
+	tmax=4,
+            rect1=10,
+            rect2=10,
+            srect1=1,
+            srect2=3,
+            vslope=None,
+            units='Km',
+            f1=1,
+            j3=1,
+            dx=0.025,
+            x0=0,
+            beg1=0,
+            frect1=0,
+            frect2=0,
+            an=1,
+            nout=2048,
+            vx0=None)
+
+# Use aliases to split building
+# Call it 'scons alias' to build
+# target identified by alias
+Alias('model','multiLayerDataCube.rsf')
+Alias('stack','velocityCube.rsf')
+
+End()

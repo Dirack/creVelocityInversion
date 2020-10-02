@@ -149,25 +149,40 @@ diff("diff",
 	nout=2048,
 	vx0=None)
 
-Flow('vd x z','diff-pik',
-	'''
-	ve2d nt=1001 dt=0.004 x=${TARGETS[1]} z=${TARGETS[2]} | 
-	put label2=Time unit2=s
-	''')
+Flow('vdix2 vmig2','diff-pik',
+     '''
+     dix rect1=20 rect2=20
+     vrmsout=${TARGETS[1]}
+     niter=40
+     ''')
 
-nz=100
-dz=0.1
-Flow('vf x0 t0','vd',
-	'''
-	cameron2d method=cheb nz=%d dz=%g x0=${TARGETS[1]} t0=${TARGETS[2]} |
-	put label2=Depth unit2=km
-	'''%(nz,dz))
+nz=200
+dz=0.01
+Flow('vxz x0 t0','vdix2',
+     '''
+     transp |
+     cameron2d method=cheb neval=20 nc=1000 nz=%d dz=%g 
+     x0=${TARGETS[1]} t0=${TARGETS[2]} |
+     put label1=Lateral unit1=km label2=Depth unit2=km
+     ''' % (nz,dz),local=1)
 
-Flow('vd2','vd',
-       '''
-       transp | time2depth velocity=$SOURCE nz=%d dz=%g z0=0 intime=y |
-       put label1=Depth unit1=km | transp
-       ''' % (nz,dz))
+#Flow('vd x z','diff-pik',
+#	'''
+#	ve2d nt=1001 dt=0.004 x=${TARGETS[1]} z=${TARGETS[2]} | 
+#	put label2=Time unit2=s
+#	''')
+
+#Flow('vf x0 t0','vd',
+#	'''
+#	cameron2d method=cheb nz=%d dz=%g x0=${TARGETS[1]} t0=${TARGETS[2]} |
+##	put label2=Depth unit2=km
+#	'''%(nz,dz))
+
+#Flow('vd2','vd',
+ #      '''
+  #     transp | time2depth velocity=$SOURCE nz=%d dz=%g z0=0 intime=y |
+   #    put label1=Depth unit1=km | transp
+    #   ''' % (nz,dz))
 
 # Use aliases to split building
 # Call it 'scons alias' to build

@@ -59,29 +59,6 @@ kinewmod(reflectors='interfaces',
 
 Flow('dataTransposed','multiLayerDataCube','transp plane=23 | transp plane=34')
 
-# Pre-stack velocity continuation
-velcon(data='dataTransposed',        # data name
-           nv=100,          # continuation steps
-           v0=1.5,          # initial velocity
-           dv=0.01,          # velocity step
-           nx=201,          # lateral dimension
-           nh=161,          # number of offsets
-           padt=1024,        # time padding
-           padt2=2048,       # extra time padding
-           padx=None,   # lateral padding
-           v1=None,     # other velocity
-           n1=None,     # time extent
-           dt=0.004,    # time sampling
-           dx=0.025,     # midpoint sampling
-           units='km',  # lateral units
-           vslope=None, # semblance muting
-           vx0=0,       # semblance muting
-           x0=0,        # lateral origin
-           srect1=3,    # semblance vertical smoothing
-           srect2=1,    # semblance lateral smoothing
-           rect1=10,    # vertical smoothing
-           rect2=10)   # lateral  smoothing
-
 # velocity analysis, NMO correction and stack
 nmoStack(dataCube='multiLayerDataCube',
 	pick='vnmo',
@@ -95,16 +72,6 @@ nmoStack(dataCube='multiLayerDataCube',
 	rect2=40,
 	rect3=3,
 	dt=0.004)
-
-# Post-stack velocity continuation
-Flow('velocityCube','stackedSection',
-	'''
-	pad beg2=200 end2=200 | cosft sign2=1 |
-	stolt vel=1.5 |
-	vczo v0=1.5 dv=0.01 nv=100 verb=y |
-	transp plane=23 | cosft sign2=-1 |
-	window min2=0 max2=5
-	''')
 
 # Loop over reflectors
 numberOfReflectors = len(layers)
@@ -165,22 +132,22 @@ diff("diff",
 	nt=1000,
 	tmin=0,
 	tmax=4,
-            rect1=10,
-            rect2=10,
-            srect1=1,
-            srect2=3,
-            vslope=None,
-            units='Km',
-            f1=1,
-            j3=1,
-            dx=0.025,
-            x0=0,
-            beg1=0,
-            frect1=0,
-            frect2=0,
-            an=1,
-            nout=2048,
-            vx0=None)
+	rect1=10,
+	rect2=10,
+	srect1=1,
+	srect2=3,
+	vslope=None,
+	units='Km',
+	f1=1,
+	j3=1,
+	dx=0.025,
+	x0=0,
+	beg1=0,
+	frect1=0,
+	frect2=0,
+	an=1,
+	nout=2048,
+	vx0=None)
 
 # Use aliases to split building
 # Call it 'scons alias' to build

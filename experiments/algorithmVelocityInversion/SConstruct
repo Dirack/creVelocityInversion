@@ -3,7 +3,9 @@
 #
 # SConstruct  (Madagascar Script)
 #
-# Purpose: Scratch of velocity inversion algorithm.
+# Purpose: Simulate diffractions in the stacked section and migrate them in
+# time using focusing analysis, after that, do velocity inversion 
+# using the algorithm from Camerom (2008).
 #
 # Site: http://www.dirackslounge.online
 # 
@@ -19,64 +21,12 @@
 from rsf.proj import *
 
 # Personal Madagascar recipes
-from rsf.recipes.kimodel import multiLayerModel as mlmod
-from rsf.recipes.kimodel import kirchhoffNewtonModeling as kinewmod
-from rsf.recipes.velocityAnalysis import velocityAnalysis as nmoStack
 from rsf.recipes.diff import diffmig as diff
 
-# Velocity continuation recipe
-from rsf.recipes.velcon import velcon
-
-xmax = 6.0
-zmax = 2.0
-
-layers = ((0.30,0.50,0.20,0.30),
-	  (1.65,1.85,1.55,1.65))
-
-velocities = (1.508,
-	      1.690,
-	      2.0)
-
-# Generate multi layer model and data cube
-mlmod(interfaces='interfaces',
-	dipsfile='interfacesDip',
-	modelfile='mod1',
-	xmax=xmax,
-	zmax=zmax,
-	layers=layers,
-	velocities=velocities)
-
-kinewmod(reflectors='interfaces',
-	reflectorsDip='interfacesDip',
-	filename='multiLayerDataCube',
-	velocities=velocities,
-	nt=1001,
-	dt=0.004,
-	ns=201,
-	ds=0.025,
-	nh=161,
-	dh=0.025)
-
-Flow('dataTransposed','multiLayerDataCube','transp plane=23 | transp plane=34')
-
-# velocity analysis, NMO correction and stack
-nmoStack(dataCube='multiLayerDataCube',
-	pick='vnmo',
-	stack='stackedSection',
-	vrms='vrms',
-	v0=1.5,
-	dv=0.01,
-	nv=100,
-	vel0=1.5,
-	rect1=15,
-	rect2=40,
-	rect3=3,
-	dt=0.004)
-
-# Loop over reflectors
-numberOfReflectors = len(layers)
-section = 'stackedSection'
-
+# Iterative picking - Loop over reflectors
+numberOfReflectors = 2
+section = '../modelingAndStack/stackedSection.rsf'
+velocities=(1.5,1.6)
 for i in range(numberOfReflectors):
 
 	reflectorPickedPoints = 'reflectorPickedPoints-%i.txt' % i
@@ -122,6 +72,7 @@ for i in range(numberOfReflectors):
 
 Flow('diffAdd',['diffSection-0','diffSection-1'],'sfadd ${SOURCES[1]} scale=1,1')
 
+# Diffraction migration by focusing analysis
 diff("diff",
 	'diffAdd',
 	v0=1.4,
@@ -149,6 +100,7 @@ diff("diff",
 	nout=2048,
 	vx0=None)
 
+# Velocity inversion with the Camerom algorithm (2008)
 Flow('vdix2 vmig2','diff-pik',
      '''
      dix rect1=20 rect2=20
@@ -165,11 +117,5 @@ Flow('vxz x0 t0','vdix2',
      x0=${TARGETS[1]} t0=${TARGETS[2]} |
      put label1=Lateral unit1=km label2=Depth unit2=km
      ''' % (nz,dz),local=1)
-
-# Use aliases to split building
-# Call it 'scons alias' to build
-# target identified by alias
-Alias('model','multiLayerDataCube.rsf')
-Alias('stack','velocityCube.rsf')
 
 End()

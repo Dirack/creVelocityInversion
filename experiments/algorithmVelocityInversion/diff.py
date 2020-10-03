@@ -1,11 +1,13 @@
 # coding: utf-8
 #
-# diff.py (Python)
+# diff.py (Madagascar Recipe)
 # 
-# Purpose: Diffraction migration recipe using focusing measure.
-# The input is a stacked section with only diffraction hiperbolas.
+# Purpose: Generate diffraction simulated hyperbolas
+# in the stacked section using iterative picking. And
+# migrate it using focusing measure. The input is a 
+# stacked section with only diffraction hiperbolas.
 # 
-# Site: http://www.dirackslounge.online
+# Site: https://dirack.github.io
 # 
 # Version 1.0
 # 
@@ -16,7 +18,7 @@
 # License: GPL-3.0 <https://www.gnu.org/licenses/gpl-3.0.txt>.
 
 from rsf.proj import *
-import string, sys
+import string, sys, os
 import version
 
 frect=0
@@ -155,3 +157,71 @@ def diffmig(name,
     slc = name + '-slc' # slice of picking cube
     Flow(slc,[vlf,pik],'slice pick=${SOURCES[1]}')
     Result(slc,grey('Migrated Diffractions'))
+
+def diffsimul(
+	section,
+	diffSimulatedSection,	
+	velocities,
+	numberOfReflectors
+	):
+	'''
+	Simulate difraction hyperbolas in the picked points in the stacked section
+	:param section: RSF filename, stacked section
+	:output diffSimulatedSection: RSF filename, diffraction simulated section
+	:param velocities: tuple, velocity layers should equal to the number of reflectors
+	:param numberOfReflectors: int, number of reflectors to iterative picking
+	'''
+
+	reflectorsList = []
+	# Iterative picking - Loop over reflectors
+	for i in range(numberOfReflectors):
+
+		reflectorPickedPoints = 'reflectorPickedPoints-%i.txt' % i
+		t0sFile = 't0s-%i' % i
+		t0sAscii = 't0s-%i.asc' %i
+		m0sFile = 'm0s-%i' % i
+		m0sAscii = 'm0s-%i.asc' % i
+		returnedSection = 'returnedSection-%i' % i
+		diffSection = 'diffSection-%i' % i
+
+		# Reflector iterative Picking
+		Flow(reflectorPickedPoints,section,
+			'''
+			ipick
+			''')
+
+		# Next step is done with 'ascFormat.sh' Shell Script
+		# please check if the script have permissions to execute
+		# Build t0 coordinates file (pass 1 to generate t0s file)
+		Flow(t0sAscii,reflectorPickedPoints,
+			'''
+			./ascFormat.sh 1 %s
+			''' % (t0sAscii))
+
+		Flow(t0sFile,t0sAscii,'sfdd form=native')
+
+		# Build m0 coordinates file (pass 2 to generate m0s file)
+		Flow(m0sAscii,reflectorPickedPoints,
+			'''
+			./ascFormat.sh 2 %s
+			''' % (m0sAscii))
+
+		Flow(m0sFile,m0sAscii,'sfdd form=native')
+
+		# Diffraction simulation in stacked section
+		Flow([returnedSection,diffSection],[section,t0sFile,m0sFile],
+			'''
+			diffsim diff=${TARGETS[1]} aperture=1
+			t0=${SOURCES[1]} m0=${SOURCES[2]} v=%g freq=10 verb=y
+			''' % (velocities[i]))
+
+		section = returnedSection
+		reflectorsList.append(returnedSection)
+
+	Flow(diffSimulatedSection,reflectorsList,
+		'''
+		rcat ${SOURCES[1:%d]}
+		scale=%s
+		''' % (
+		len(reflectorsList),
+		','.join(['1' for i in range(len(reflectorsList))])))

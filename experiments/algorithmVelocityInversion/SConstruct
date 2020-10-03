@@ -21,59 +21,23 @@
 from rsf.proj import *
 
 # Personal Madagascar recipes
-from diff import diffmig as diff
+from diff import diffmig 
+from diff import diffsimul
 
 # Iterative picking - Loop over reflectors
 numberOfReflectors = 2
 section = '../modelingAndStack/stackedSection.rsf'
 velocities=(1.5,1.6)
-for i in range(numberOfReflectors):
+diffSimulatedSection = 'diffAdd'
 
-	reflectorPickedPoints = 'reflectorPickedPoints-%i.txt' % i
-	t0sFile = 't0s-%i' % i
-	t0sAscii = 't0s-%i.asc' %i
-	m0sFile = 'm0s-%i' % i
-	m0sAscii = 'm0s-%i.asc' % i
-	returnedSection = 'returnedSection-%i' % i
-	diffSection = 'diffSection-%i' % i
-
-	# Reflector iterative Picking
-	Flow(reflectorPickedPoints,section,
-		'''
-		ipick
-		''')
-
-	# Next step is done with 'ascFormat.sh' Shell Script
-	# please check if the script have permissions to execute
-	# Build t0 coordinates file (pass 1 to generate t0s file)
-	Flow(t0sAscii,reflectorPickedPoints,
-		'''
-		./ascFormat.sh 1 %s
-		''' % (t0sAscii))
-
-	Flow(t0sFile,t0sAscii,'sfdd form=native')
-
-	# Build m0 coordinates file (pass 2 to generate m0s file)
-	Flow(m0sAscii,reflectorPickedPoints,
-		'''
-		./ascFormat.sh 2 %s
-		''' % (m0sAscii))
-
-	Flow(m0sFile,m0sAscii,'sfdd form=native')
-
-	# Diffraction simulation in stacked section
-	Flow([returnedSection,diffSection],[section,t0sFile,m0sFile],
-		'''
-		diffsim diff=${TARGETS[1]} aperture=1
-		t0=${SOURCES[1]} m0=${SOURCES[2]} v=%g freq=10 verb=y
-		''' % (velocities[i]))
-
-	section = returnedSection
-
-Flow('diffAdd',['diffSection-0','diffSection-1'],'sfadd ${SOURCES[1]} scale=1,1')
+# Diffraction simulation in an iterative picking loop
+diffsimul(section,
+	diffSimulatedSection,
+	velocities,
+	numberOfReflectors)
 
 # Diffraction migration by focusing analysis
-diff("diff",
+diffmig("diff",
 	'diffAdd',
 	v0=1.4,
 	nv=100,
@@ -114,8 +78,10 @@ Flow('vxz x0 t0','vdix2',
      '''
      transp |
      cameron2d method=cheb neval=20 nc=1000 nz=%d dz=%g 
-     x0=${TARGETS[1]} t0=${TARGETS[2]} |
-     put label1=Lateral unit1=km label2=Depth unit2=km
+     x0=${TARGETS[1]} t0=${TARGETS[2]}
      ''' % (nz,dz),local=1)
+
+
+Flow('vz','vxz','put label1=Lateral unit1=km label2=Depth unit2=km n3=1')
 
 End()

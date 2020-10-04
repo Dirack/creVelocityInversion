@@ -13,8 +13,8 @@ class TestDiffMig(unittest.TestCase):
 	def setUp(self):
 		self.diffSimulatedSection = 'diffSimulatedSection'
 		self.diffMigratedSection = 'diffMigratedsection' 
-		self.param = {'stk': self.diffSimulatedSection,
-		'name': self.diffMigratedSection,
+		self.param = {'diffSimulatedSection': self.diffSimulatedSection,
+		'diffMigratedSection': self.diffMigratedSection,
 		'v0': 1.4,
 		'nv':100,
 		'dv':0.01,
@@ -57,7 +57,7 @@ class TestDiffMig(unittest.TestCase):
 		ValueError
 		'''
 		self.tmp = self.param
-		self.tmp['name'] = self.param['stk']
+		self.tmp['diffMigratedSection'] = self.param['diffSimulatedSection']
 		self.assertRaises(ValueError,
 		diffmig,**self.tmp)
 	

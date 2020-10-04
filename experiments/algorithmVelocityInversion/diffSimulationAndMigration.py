@@ -23,8 +23,8 @@ import version
 
 frect=0
 
-def diffmig(stk,
-            name,
+def diffmig(diffSimulatedSection,
+            diffMigratedSection,
             v0,
             nv,
             dv,
@@ -51,17 +51,17 @@ def diffmig(stk,
             vx0=None):
 	'''
 	Diffraction migration by focusing measure
-	:param stk: RSF filename, stacked Section with simulated diffractions
-	:output name: RSF filename, basename of the outputs
-	|-> name+pik: time migrated velocity 
-	|-> name+dip: dominant slope section
-	|-> name+slc: slice of the velocity cube
-	|-> name+vlf: velocity cube focusing measure
-	|-> name+foc: focusing measure
-	|-> name+sem: semblance
+	:param diffSimulatedSection: RSF filename, stacked Section with simulated diffractions
+	:output diffMigratedSection: RSF filename, basename of the outputs
+	|-> diffMigratedSection+pik: time migrated velocity 
+	|-> diffMigratedSection+dip: dominant slope section
+	|-> diffMigratedSection+slc: slice of the velocity cube
+	|-> diffMigratedSection+vlf: velocity cube focusing measure
+	|-> diffMigratedSection+foc: focusing measure
+	|-> diffMigratedSection+sem: semblance
 	'''
 
-	if stk == name:
+	if diffSimulatedSection == diffMigratedSection:
 		raise ValueError("Filenames should not be equal")
 		return False
 
@@ -70,12 +70,13 @@ def diffmig(stk,
 
 	if frect==0:
 		frect2=2*rect2/j3
-
-	dip = name+'-dip' # dominant slope of stacked section
+	
+	# dominant slope of stacked section
+	dip = diffMigratedSection+'-dip'
 
 	# Calculate dominante slope, rect parameter
 	# are the smooth radius
-	Flow(dip,stk,'dip rect1=%d rect2=%d' % (rect1,rect2))
+	Flow(dip,diffSimulatedSection,'dip rect1=%d rect2=%d' % (rect1,rect2))
 
 	# Velocity analisys by focusing
 	# Stolt Migration. It needs the cosine
@@ -95,10 +96,10 @@ def diffmig(stk,
 	''' % (padx,beg1,v0,nv,dv,v0,nx,beg1,x0)
 
 	# Velocity continuation of diffraction
-	vlf=name+'-vlf'
-	Flow(vlf,stk,velcon)
+	vlf=diffMigratedSection+'-vlf'
+	Flow(vlf,diffSimulatedSection,velcon)
 
-	Flow(vlf+'q',stk,
+	Flow(vlf+'q',diffSimulatedSection,
 	    '''
 	    math output="input*input" | %s | clip2 lower=0
 	    ''' % velcon)
@@ -118,20 +119,22 @@ def diffmig(stk,
 	cut max1=%g | cut min1=%g
 	''' % (frect1,frect2,tmin,tmax)
 
-	foc=name+'-foc' # focusing measure
+	# focusing measure
+	foc=diffMigratedSection+'-foc'
 	Flow(foc,vlf,focus)
 
 	# semblance is the local varimax measure
 	# sfmul multplies data
 	# sfdivn does smooth data division
-	sem=name+'-sem'
+	sem = diffMigratedSection+'-sem'
 	Flow(sem,[vlf,vlf+'q'],
 	    '''
 	    mul $SOURCE |
 	    divn den=${SOURCES[1]} rect1=%d rect3=%d
 	    ''' % (rect1,rect2))
-
-	pik=name+'-pik' # Data after picking
+	
+	# Data after picking
+	pik=diffMigratedSection+'-pik' 
 
 	# if vslope, use it to mute data
 	if vslope:
@@ -152,7 +155,8 @@ def diffmig(stk,
 
 	Flow(pik,sem,pick2)
 
-	slc = name + '-slc' # slice of picking cube
+	# slice of picking cube
+	slc = diffMigratedSection + '-slc' 
 	Flow(slc,[vlf,pik],'slice pick=${SOURCES[1]}')
 	return True
 

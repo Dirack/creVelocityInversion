@@ -28,45 +28,45 @@ from diffSimulationAndMigration import diffsimul
 numberOfReflectors = 2
 section = '../modelingAndStack/stackedSection.rsf'
 velocities=(1.5,1.6)
-diffSimulatedSection = 'diffSimulatedSection'
-diffMigratedSection = 'diffMigratedSection'
+
+param = {'diffSimulatedSection': 'diffSimulatedSection',
+'diffMigratedSection': 'diffMigratedSection',
+'v0':1.4,
+'nv':100,
+'dv':0.01,
+'nx':201,
+'padx':1000,
+'nt':1001,
+'tmin':0,
+'tmax':4,
+'rect1':10,
+'rect2':10,
+'srect1':1,
+'srect2':3,
+'vslope':None,
+'units':'Km',
+'f1':1,
+'j3':1,
+'dx':0.025,
+'x0':0,
+'beg1':0,
+'frect1':0,
+'frect2':0,
+'an':1,
+'nout':2048,
+'vx0':None}
 
 # Diffraction simulation in an iterative picking loop
 diffsimul(section,
-	diffSimulatedSection,
+	param['diffSimulatedSection'],
 	velocities,
 	numberOfReflectors)
 
 # Diffraction migration by focusing analysis
-diffmig(diffSimulatedSection,
-	diffMigratedSection,
-	v0=1.4,
-	nv=100,
-	dv=0.01,
-	nx=201,
-	padx=1000,
-	nt=1001,
-	tmin=0,
-	tmax=4,
-	rect1=10,
-	rect2=10,
-	srect1=1,
-	srect2=3,
-	vslope=None,
-	units='Km',
-	f1=1,
-	j3=1,
-	dx=0.025,
-	x0=0,
-	beg1=0,
-	frect1=0,
-	frect2=0,
-	an=1,
-	nout=2048,
-	vx0=None)
+diffmig(**param)
 
 # Velocity inversion with the Camerom algorithm (2008)
-Flow('vdix2 vmig2',diffMigratedSection+'-pik',
+Flow('vdix2 vmig2',param['diffMigratedSection']+'-pik',
      '''
      dix rect1=20 rect2=20
      vrmsout=${TARGETS[1]}

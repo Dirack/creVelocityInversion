@@ -6,9 +6,9 @@ from rsf.proj import *
 
 testdir = os.path.dirname(os.environ['PWD'])+'/experiments/algorithmVelocityInversion/'
 sys.path.append(testdir)
-from diff import diffsimul
+from diffSimulationAndMigration import diffsimul
 
-class TestDiff(unittest.TestCase):
+class TestDiffSimul(unittest.TestCase):
 
 	def setUp(self):
 		self.section = 'stackedSection'

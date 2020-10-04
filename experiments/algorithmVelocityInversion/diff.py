@@ -172,9 +172,26 @@ def diffsimul(
 	:param numberOfReflectors: int, number of reflectors to iterative picking
 	'''
 
-	if velocities not in [tuple]:
+	if type(velocities) is not tuple:
 		raise TypeError("velocities parameter should be a tuple")
-		return
+		return False
+
+	if type(numberOfReflectors) is not int:
+		raise TypeError("numberOfReflectors parameter should be int")
+		return False
+
+	if numberOfReflectors <= 0:
+		raise ValueError("numberOfReflectors should be major than 0")
+		return False
+
+	if section == diffSimulatedSection:
+		raise ValueError("filenames should not be equal")
+		return False
+
+	if len(velocities) < numberOfReflectors:
+		raise ValueError("number of velocities should be equal or major than number of reflectors")
+		return False
+	
 	reflectorsList = []
 	# Iterative picking - Loop over reflectors
 	for i in range(numberOfReflectors):
@@ -228,3 +245,5 @@ def diffsimul(
 		''' % (
 		len(reflectorsList),
 		','.join(['1' for i in range(len(reflectorsList))])))
+
+	return True

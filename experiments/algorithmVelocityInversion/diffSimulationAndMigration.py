@@ -60,6 +60,11 @@ def diffmig(stk,
 	|-> name+foc: focusing measure
 	|-> name+sem: semblance
 	'''
+
+	if stk == name:
+		raise ValueError("Filenames should not be equal")
+		return False
+
 	if frect==0:
 		frect1=2*rect1
 

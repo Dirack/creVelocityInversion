@@ -172,6 +172,9 @@ def diffsimul(
 	:param numberOfReflectors: int, number of reflectors to iterative picking
 	'''
 
+	if velocities not in [tuple]:
+		raise TypeError("velocities parameter should be a tuple")
+		return
 	reflectorsList = []
 	# Iterative picking - Loop over reflectors
 	for i in range(numberOfReflectors):

@@ -24,6 +24,25 @@ from rsf.proj import *
 from diffSimulationAndMigration import diffmig 
 from diffSimulationAndMigration import diffsimul
 
+def castingParametersFromCmd(param):
+	'''
+	casting of the parameters from
+	command line
+	:global ARGLIST: list of parameters passed through comand line in scons
+	:param param: dictionary, parameters dictionary you want to cast
+	'''
+	global ARGLIST
+
+	for k, v in ARGLIST:
+		if k in param.keys():
+			if type(param[k]) is float:
+				param[k] = float(v)
+			elif type(param[k]) is int:
+				param[k] = int(v)
+			else:
+				param[k] = v
+
+
 # Iterative picking - Loop over reflectors
 numberOfReflectors = 2
 section = '../modelingAndStack/stackedSection.rsf'
@@ -56,6 +75,11 @@ param = {'diffSimulatedSection': 'diffSimulatedSection',
 'nout':2048,
 'vx0':None}
 
+# substitute parameters passed through command line
+# in parameters dictionaries
+castingParametersFromCmd(param)
+
+print(param)
 # Diffraction simulation in an iterative picking loop
 diffsimul(section,
 	param['diffSimulatedSection'],

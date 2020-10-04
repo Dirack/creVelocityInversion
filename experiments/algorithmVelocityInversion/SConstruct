@@ -23,32 +23,15 @@ from rsf.proj import *
 # Personal Madagascar recipes
 from diffSimulationAndMigration import diffmig 
 from diffSimulationAndMigration import diffsimul
+from inputScons import castingParametersFromCmd
 
-def castingParametersFromCmd(param):
-	'''
-	casting of the parameters from
-	command line
-	:global ARGLIST: list of parameters passed through comand line in scons
-	:param param: dictionary, parameters dictionary you want to cast
-	'''
-	global ARGLIST
+# Parameters dictionaries to the functions
+diffSimulParameters = {'numberOfReflectors':2,
+'section':'../modelingAndStack/stackedSection.rsf',
+'velocities':(1.5,1.6),
+'diffSimulatedSection':'diffSimulatedSection'}
 
-	for k, v in ARGLIST:
-		if k in param.keys():
-			if type(param[k]) is float:
-				param[k] = float(v)
-			elif type(param[k]) is int:
-				param[k] = int(v)
-			else:
-				param[k] = v
-
-
-# Iterative picking - Loop over reflectors
-numberOfReflectors = 2
-section = '../modelingAndStack/stackedSection.rsf'
-velocities=(1.5,1.6)
-
-param = {'diffSimulatedSection': 'diffSimulatedSection',
+diffMigParameters = {'diffSimulatedSection': 'diffSimulatedSection',
 'diffMigratedSection': 'diffMigratedSection',
 'v0':1.4,
 'nv':100,
@@ -75,22 +58,20 @@ param = {'diffSimulatedSection': 'diffSimulatedSection',
 'nout':2048,
 'vx0':None}
 
-# substitute parameters passed through command line
-# in parameters dictionaries
-castingParametersFromCmd(param)
+# substitute parameters into parameters dictionaries
+# if some of them was passed through command line
+castingParametersFromCmd(ARGLIST,diffSimulParameters)
+castingParametersFromCmd(ARGLIST,diffMigParameters)
 
-print(param)
+
 # Diffraction simulation in an iterative picking loop
-diffsimul(section,
-	param['diffSimulatedSection'],
-	velocities,
-	numberOfReflectors)
+diffsimul(**diffSimulParameters)
 
 # Diffraction migration by focusing analysis
-diffmig(**param)
+diffmig(**diffMigParameters)
 
 # Velocity inversion with the Camerom algorithm (2008)
-Flow('vdix2 vmig2',param['diffMigratedSection']+'-pik',
+Flow('vdix2 vmig2',diffMigParameters['diffMigratedSection']+'-pik',
      '''
      dix rect1=20 rect2=20
      vrmsout=${TARGETS[1]}

@@ -21,3 +21,7 @@ all:	$(DEP)
 test_%:
 	@echo $@
 	@python -m unittest $@
+
+integ:
+	cd ../experiments/modelingAndStack/ && scons
+	cd ../experiments/algorithmVelocityInversion/ && scons

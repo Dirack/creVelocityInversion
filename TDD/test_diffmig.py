@@ -60,4 +60,4 @@ class TestDiffMig(unittest.TestCase):
 		self.tmp['diffMigratedSection'] = self.param['diffSimulatedSection']
 		self.assertRaises(ValueError,
 		diffmig,**self.tmp)
-	
+

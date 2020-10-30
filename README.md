@@ -6,7 +6,10 @@
 
 [![Github release](https://img.shields.io/github/v/release/Dirack/creVelocityInversion)](https://github.com/Dirack/creVelocityInversion/releases/latest) [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0) [![Madagascar](https://img.shields.io/badge/Madagascar-v3.0-blue)](https://github.com/ahay/src/tree/master) [![Build Status](https://travis-ci.org/Dirack/creVelocityInversion.svg?branch=master)](https://travis-ci.org/Dirack/creVelocityInversion)
 
-#### TODO: ABSTRACT
+Common Reflection Element (CRE) velocity inversion algorithm is based on [Cameron (2008)](http://www.reproducibility.org/RSF/book/tccs/time2depth/paper_html/) velocity inversion algorithm and 
+in diffraction focusing migration and simulation. The depth velocity model is obtained from stacked section in two steps:
+First, simulation and migration of diffraction hyperbolas in the stacked section to obtain the time migration velocity model.
+Second, time to depth conversion of the time velocity model.
 
 ## Development setup
 

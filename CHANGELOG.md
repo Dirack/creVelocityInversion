@@ -15,8 +15,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Added
 
+- Scratch of the velocity inversion algorithm with iterative picking #2 (42c68d5)
 
-## Changed
+- Use the Cameron (2008) velocity inversion algorithm Resolve #9 (3d7331e) (2800abb)
 
+- Add parameters dictionary to allow test and command line input parameters (0e28fc0)
 
-
+- Casting parameters function (5090942)

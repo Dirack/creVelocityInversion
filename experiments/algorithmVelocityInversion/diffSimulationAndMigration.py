@@ -19,7 +19,6 @@
 
 from rsf.proj import *
 import string, sys, os
-import version
 
 frect=0
 

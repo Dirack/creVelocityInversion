@@ -91,7 +91,7 @@ Flow('vxz x0 t0','vdix2',
 Flow('vz','vxz',
 	'''
 	put label1=Lateral unit1=km label2=Depth unit2=km n3=1 |
-	trasnp
+	transp
 	''')
 
 End()

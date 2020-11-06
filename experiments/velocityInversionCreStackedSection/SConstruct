@@ -26,7 +26,7 @@ from diffSimulationAndMigration import diffsimul
 from inputScons import castingParametersFromCmd
 
 # Parameters dictionaries to the functions
-diffSimulParameters = {'numberOfReflectors':2,
+diffSimulParameters = {'numberOfReflectors':1,
 'section':'stackedSection.rsf',
 'velocities':(1.5,1.6),
 'diffSimulatedSection':'diffSimulatedSection'}
@@ -39,8 +39,8 @@ diffMigParameters = {'diffSimulatedSection': 'diffSimulatedSection',
 'nx':201,
 'padx':1000,
 'nt':1001,
-'tmin':0,
-'tmax':4,
+'tmin':0.3,
+'tmax':2.296,
 'rect1':10,
 'rect2':10,
 'srect1':1,
@@ -91,7 +91,7 @@ Flow('vxz x0 t0','vdix2',
 Flow('vz','vxz',
 	'''
 	put label1=Lateral unit1=km label2=Depth unit2=km n3=1 |
-	trasnp
+	transp
 	''')
 
 End()

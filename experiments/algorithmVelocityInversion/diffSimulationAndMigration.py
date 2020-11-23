@@ -237,11 +237,11 @@ def diffsimul(
 			''' % (velocities[i]))
 
 		section = returnedSection
-		reflectorsList.append(returnedSection)
+		reflectorsList.append(diffSection)
 
 	Flow(diffSimulatedSection,reflectorsList,
 		'''
-		rcat ${SOURCES[1:%d]}
+		add ${SOURCES[1:%d]}
 		scale=%s
 		''' % (
 		len(reflectorsList),

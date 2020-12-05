@@ -15,6 +15,7 @@
 
 SRC = diffmig diffsimul
 DEP = $(addprefix test_, $(SRC)) 
+SRCNIPTOMO= ../Mniptomo.c ../raytrace.c ../grid2.c ../grid3.c ../atela.c ../eno3.c
 
 all:	$(DEP)
 
@@ -25,3 +26,11 @@ test_%:
 integ:
 	cd ../experiments/modelingAndStack/ && scons
 	cd ../experiments/algorithmVelocityInversion/ && scons
+
+# Version of the sfniptomo program for GDB (GNU debugger)
+niptomo.x:	$(SRCNIPTOMO)
+	gcc -g $^ -I$$RSFSRC/include -I.. -L$$RSFSRC/lib -o $@ -lrsf -lm
+	@echo "Program niptomo.x for GDB built"
+
+clean:
+	rm *.x

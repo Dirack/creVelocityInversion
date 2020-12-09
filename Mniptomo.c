@@ -75,7 +75,8 @@ int main(int argc, char* argv[])
 	if(!sf_histint(angles,"n1",&nr)) sf_error("No n1= in anglefile");
 
 	a = sf_floatalloc(nr);
-	a[0]=180.*deg2rad;
+	sf_floatread(a,1,angles);
+	a[0]=a[0]*deg2rad;
 
 	/* specify output dimensions */
 	if(!sf_histint(t0s,"n1",&nt0)) sf_error("No n1= in t0s file");
@@ -135,4 +136,19 @@ int main(int argc, char* argv[])
 		}
     	}
 
+	if(it>0){
+		i = it >= 2 ? it - 2 : it - 1;
+		/* Escape vector */
+		x[0]=traj[it][0];
+		x[1]=traj[it][1];
+		x[0]-=traj[i][0];
+		x[1]-=traj[i][1];
+		/* Dot product with unit vector pointing upward */
+		t = sqrt(x[0]*x[0]+x[1]*x[1]); /* Length */
+		t = acos(x[0]/t);
+		if(x[1]<0) t = -t;
+	}else{
+		t = a[0];
+		t /= deg2rad;
+	}
 }

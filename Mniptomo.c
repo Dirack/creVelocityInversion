@@ -26,7 +26,7 @@ int main(int argc, char* argv[])
 	float dt0;
 	float* t0;
 	int nt;
-	int it;
+	int it,ir;
 	float** traj;
 	float x[2];
 	float p[2];
@@ -67,7 +67,6 @@ int main(int argc, char* argv[])
 	if(!sf_histint(angles,"n1",&nr)) sf_error("No n1= in anglefile");
 	a = sf_floatalloc(nr);
 	sf_floatread(a,nr,angles);
-	a[0]=a[0]*DEG2RAD;
 
 	/* T0s file: File with ray's traveltime */
 	if(!sf_histint(t0s,"n1",&nt0)) sf_error("No n1= in t0s file");
@@ -107,22 +106,23 @@ int main(int argc, char* argv[])
 		sf_warning("");
 	}
 
-	for(i=0; i<nr; i++){
+	for(ir=0; ir<nr; ir++){
 
 		/* initialize ray tracing object */
-		nt = (int) t0[0]/dt0;
+		nt = (int) t0[ir]/dt0;
 		rt = raytrace_init(2,true,nt,dt0,n,o,d,slow,ORDER);
 
 		/* Ray tracing */
 		traj = sf_floatalloc2(ndim,nt+1);
 		
 		/* initialize position */
-		x[0] = s[0][0]; 
-		x[1] = s[0][1];
+		x[0] = s[ir][0]; 
+		x[1] = s[ir][1];
 
 		/* initialize direction */
-		p[0] = -cosf(a[0]);
-		p[1] = sinf(a[0]);
+		a[ir]=a[ir]*DEG2RAD;
+		p[0] = -cosf(a[ir]);
+		p[1] = sinf(a[ir]);
 
 		it = trace_ray (rt, x, p, traj);
 
@@ -140,11 +140,12 @@ int main(int argc, char* argv[])
 			t = acos(x[0]/t);
 			if(x[1]<0) t = -t;
 		}else{
-			t = a[0];
+			t = a[ir];
 			t /= DEG2RAD;
 		}
 
 		/* Raytrace close */
 		raytrace_close(rt);
+		free(traj);
 	}
 }

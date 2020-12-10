@@ -39,16 +39,16 @@ Plot('model','model','grey color=j scalebar=y label1=Depth unit1=km label2=Posit
 
 Flow('s1',None,
         '''
-        math n1=1 d1=1 o1=1 n2=1 o2=1 d2=1 output="x1"
+        math n1=2 d1=1 o1=1 n2=1 o2=1 d2=1 output="x1"
         ''')
 
-Flow('s2',None,'spike n1=1 d1=1 o1=1 n2=1 o2=1 d2=1 mag=1')
+Flow('s2',None,'spike n1=2 d1=1 o1=1 n2=1 o2=1 d2=1 mag=1')
 
 Flow('shotsfile',['s2','s1'],'rcat ${SOURCES[1]} axis=2 | transp')
 
-Flow('anglefile',None,'spike n1=1 mag=180')
+Flow('anglefile',None,'spike n1=2 mag=180')
 
-Flow('t0s',None,'spike n1=1 mag=1')
+Flow('t0s',None,'spike n1=2 mag=1')
 
 # do a ray-tracing
 Flow('ray',['model','shotsfile','anglefile','t0s'],

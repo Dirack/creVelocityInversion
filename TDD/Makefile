@@ -15,7 +15,7 @@
 
 SRC = diffmig diffsimul
 DEP = $(addprefix test_, $(SRC)) 
-SRCNIPTOMO= ../Mniptomo.c ../raytrace.c ../grid2.c ../grid3.c ../atela.c ../eno3.c
+SRCNIPTOMO= ../Mniptomo.c ../raytrace.c ../grid2.c ../atela.c
 
 all:	$(DEP)
 

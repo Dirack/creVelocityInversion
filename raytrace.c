@@ -21,7 +21,6 @@
 
 #include "raytrace.h"
 #include "grid2.h"
-#include "grid3.h"
 #include "atela.h"
 
 #ifndef _raytrace_h
@@ -40,7 +39,6 @@ struct RayTrace {
     bool sym;
     int dim, nt;
     float dt, z0;
-    grid3 grd3;
     grid2 grd2;
 };
 /* concrete data type */
@@ -59,10 +57,6 @@ static void iso_rhs(void* par, float* y, float* f)
 		case 2:
 			s2 = grid2_vel(rt->grd2,y);
 			grid2_vgrad(rt->grd2,y,sds);
-			break;
-		case 3:
-			s2 = grid3_vel(rt->grd3,y);
-			grid3_vgrad(rt->grd3,y,sds);
 			break;
 		default:
 			s2 = 0.;
@@ -85,8 +79,6 @@ static int term(void* par, float* y)
     switch (rt->dim) {
 		case 2:
 			return grid2_term(rt->grd2,y);
-		case 3:
-			return grid3_term(rt->grd3,y);
 		default:
 			sf_error("%s: Cannot raytrace with dim=%d",__FILE__,rt->dim);
 			return 0;
@@ -124,12 +116,6 @@ raytrace raytrace_init(int dim            /* dimensionality (2 or 3) */,
 								   n[1], o[1], d[1],
 								   slow2, order);
 			break;
-		case 3:
-			rt->grd3 = grid3_init (n[0], o[0], d[0], 
-								   n[1], o[1], d[1],
-								   n[2], o[2], d[2],
-								   slow2, order);
-			break;
 		default:
 			sf_error("%s: Cannot raytrace with dim=%d",__FILE__,dim);
     }
@@ -143,9 +129,6 @@ void raytrace_close (raytrace rt)
     switch (rt->dim) {
 		case 2:
 			grid2_close (rt->grd2);
-			break;
-		case 3:
-			grid3_close (rt->grd3);
 			break;
     }
     free (rt);
@@ -186,9 +169,6 @@ int trace_ray (raytrace rt  /* ray tracing object */,
 			case 2:
 				s2 = grid2_vel(rt->grd2,x);
 				break;
-			case 3:
-				s2 = grid3_vel(rt->grd3,x);
-				break;
 			default:
 				s2 = 0.;
 				sf_error("%s: Cannot raytrace with dim=%d",__FILE__,dim);
@@ -213,11 +193,6 @@ int trace_ray (raytrace rt  /* ray tracing object */,
 				it = atela_step (dim, nt, rt->dt, true, x, p, 
 								 rt->grd2, 
 								 grid2_vgrad, grid2_vel, grid2_term, traj);
-				break;
-			case 3:
-				it = atela_step (rt->dim, nt, rt->dt, true, x, p, 
-								 rt->grd3, 
-								 grid3_vgrad, grid3_vel, grid3_term, traj);
 				break;
 			default:
 				sf_error("%s: cannot handle %d dimensions",__FILE__,rt->dim);

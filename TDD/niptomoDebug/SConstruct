@@ -20,15 +20,22 @@ from rsf.proj import *
 # create a model
 amp=1
 rad=1
+#Flow('model',None,
+#     '''
+#     math n1=301 d1=0.01 o1=0 n2=1001 d2=0.01 o2=0 output="1+2*x1+0.5*x2" |
+#     math output="input+%g*exp(-((x1-1.5)*(x1-1.5)+(x2-5)*(x2-5))/(%g*%g))" |
+#     put label1=Depth unit1=km label2=Position unit2=km
+#     ''' % (amp,rad,rad))
+
+# Constant velocity model for test
 Flow('model',None,
      '''
-     math n1=301 d1=0.01 o1=0 n2=1001 d2=0.01 o2=0 output="1+2*x1+0.5*x2" |
-     math output="input+%g*exp(-((x1-1.5)*(x1-1.5)+(x2-5)*(x2-5))/(%g*%g))" |
+     spike n1=301 d1=0.01 o1=0 n2=1001 d2=0.01 o2=0 mag=1.5 |
      put label1=Depth unit1=km label2=Position unit2=km
-     ''' % (amp,rad,rad))
+     ''' )
 
 # plot the model
-Plot('model','model','grey color=j scalebar=y label1=Depth unit1=km label2=Position unit2=km barlabel=Velocity barunit=km/s barreverse=y title=Model allpos=y')
+Plot('model','model','grey color=j scalebar=y label1=Depth unit1=km label2=Position unit2=km barlabel=Velocity barunit=km/s barreverse=y title="Constant Velocity Model" allpos=y')
 
 Flow('s1',None,
         '''

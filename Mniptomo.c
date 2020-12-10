@@ -9,7 +9,6 @@
 int main(int argc, char* argv[])
 {
 	bool verb;
-	int order=4; /* Interpolation order */
 	int n[2];
 	float d[2];
 	float o[2];
@@ -18,7 +17,6 @@ int main(int argc, char* argv[])
 	int ndim;
 	int nshot;
 	int nm;
-	float deg2rad;
 	float* a;
 	int nr;
 	float* slow;
@@ -59,10 +57,9 @@ int main(int argc, char* argv[])
 		sf_warning("Verbose on");
 	}
 
-	if(!sf_histint(shots,"n1",&ndim) || 2 != ndim) sf_error("Must have n1=2 in shotsfile");
-
+	if(!sf_histint(shots,"n1",&ndim) || 2 != ndim)
+		sf_error("Must have n1=2 in shotsfile");
 	if(!sf_histint(shots,"n2",&nshot)) sf_error("No n2= in shotfile");
-
 	if(sf_histfloat(shots,"o2",&t)) sf_putfloat(rays,"o3",t);
 	if(sf_histfloat(shots,"d2",&t)) sf_putfloat(rays,"d3",t);
 
@@ -70,21 +67,19 @@ int main(int argc, char* argv[])
 	sf_floatread(s[0],ndim*nshot,shots);
 	sf_fileclose(shots);
 
-	deg2rad = SF_PI/180.;
-
 	if(!sf_histint(angles,"n1",&nr)) sf_error("No n1= in anglefile");
 
 	a = sf_floatalloc(nr);
-	sf_floatread(a,1,angles);
-	a[0]=a[0]*deg2rad;
+	sf_floatread(a,nr,angles);
+	a[0]=a[0]*DEG2RAD;
 
 	/* specify output dimensions */
 	if(!sf_histint(t0s,"n1",&nt0)) sf_error("No n1= in t0s file");
-	t0 = sf_floatalloc(1);
-	sf_floatread(t0,1,t0s);
+	t0 = sf_floatalloc(nt0);
+	sf_floatread(t0,nt0,t0s);
 	dt0=0.001;
 	sf_putfloat(rays,"d1",dt0);
-	sf_putfloat(rays,"o1",0.);
+	sf_putfloat(rays,"o1",o[0]);
 	sf_putfloat(rays,"o2",180.);
 	sf_putfloat(rays,"d2",1.);
 
@@ -100,7 +95,7 @@ int main(int argc, char* argv[])
 
 	/* initialize ray tracing object */
 	nt = (int) t0[0]/dt0;
-	rt = raytrace_init(2,true,nt,dt0,n,o,d,slow,order);
+	rt = raytrace_init(2,true,nt,dt0,n,o,d,slow,ORDER);
 	free(slow);
 
 	/* Ray tracing */
@@ -149,6 +144,6 @@ int main(int argc, char* argv[])
 		if(x[1]<0) t = -t;
 	}else{
 		t = a[0];
-		t /= deg2rad;
+		t /= DEG2RAD;
 	}
 }

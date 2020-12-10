@@ -26,6 +26,10 @@
 
 #ifndef _raytrace_h
 
+#define DEG2RAD SF_PI/180. /* Degrees to radians conversion */
+#define ORDER 4 /* Ray tracing interpolation order */
+/*^*/
+
 typedef struct RayTrace* raytrace;
 /* abstract data type */
 /*^*/

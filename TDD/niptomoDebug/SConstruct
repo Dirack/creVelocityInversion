@@ -56,14 +56,8 @@ Flow('ray',['model','shotsfile','anglefile','t0s'],
         niptomo shotsfile=${SOURCES[1]} anglefile=${SOURCES[2]} t0s=${SOURCES[3]}
         ''')
 
-# do a ray-tracing
-#Flow('ray',['model'],
-#        '''
-#        niptomo
-#        ''')
-
 # plot the ray
-Plot('ray','graph transp=y yreverse=y min1=0 max1=3 min2=0 max2=10 wantaxis=n wanttitle=n scalebar=y plotcol=7 plotfat=3')
+Plot('ray','graph symbol=* symbolsz=5 transp=y yreverse=y min1=0 max1=3 min2=0 max2=10 wantaxis=n wanttitle=n scalebar=y plotcol=7 plotfat=3')
 
 # overlay model and ray
 Result('overlay','model ray','Overlay')

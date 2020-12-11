@@ -51,9 +51,9 @@ Flow('anglefile',None,'spike n1=2 mag=180')
 Flow('t0s',None,'spike n1=2 mag=1')
 
 # do a ray-tracing
-Flow('ray',['model','shotsfile','anglefile','t0s'],
+Flow(['ray','nipangles'],['model','shotsfile','anglefile','t0s'],
         '''
-        niptomo shotsfile=${SOURCES[1]} anglefile=${SOURCES[2]} t0s=${SOURCES[3]}
+        niptomo shotsfile=${SOURCES[1]} anglefile=${SOURCES[2]} t0s=${SOURCES[3]} nipangles=${TARGETS[1]}
         ''')
 
 # plot the ray

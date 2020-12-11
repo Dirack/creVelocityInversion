@@ -31,7 +31,7 @@ int main(int argc, char* argv[])
 	float x[2];
 	float p[2];
 	int i;
-	sf_file shots, vel, rays, angles, t0s;
+	sf_file shots, vel, rays, angles, t0s, nipangles;
 	raytrace rt;
 
 	sf_init(argc,argv);
@@ -41,6 +41,7 @@ int main(int argc, char* argv[])
 	rays = sf_output("out");
 	t0s = sf_input("t0s");
 	angles = sf_input("anglefile");
+	nipangles = sf_output("nipangles");
 
 	/* Velocity model: get 2D grid parameters */
 	if(!sf_histint(vel,"n1",n)) sf_error("No n1= in input");
@@ -143,6 +144,9 @@ int main(int argc, char* argv[])
 			t = a[ir];
 			t /= DEG2RAD;
 		}
+
+		/* Write angles in the ray endpoints */
+		sf_floatwrite(&t,1,nipangles);
 
 		/* Raytrace close */
 		raytrace_close(rt);

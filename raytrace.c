@@ -1,4 +1,4 @@
-/* Ray tracing interface. */
+/* Ray tracing interface modified to NIP tomography. */
 /*
  Copyright (C) 2004 University of Texas at Austin
  

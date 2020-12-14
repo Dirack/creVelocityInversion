@@ -16,6 +16,7 @@
 SRC = diffmig diffsimul
 DEP = $(addprefix test_, $(SRC)) 
 SRCNIPTOMO= ../Mniptomo.c ../raytrace.c ../grid2.c ../atela.c
+SRCNIPMODEL= ../Mnipmodel.c ../raytrace.c ../grid2.c ../atela.c
 
 all:	$(DEP)
 
@@ -32,5 +33,12 @@ niptomo.x:	$(SRCNIPTOMO)
 	gcc -g $^ -I$$RSFSRC/include -I.. -L$$RSFSRC/lib -o $@ -lrsf -lm
 	@echo "Program niptomo.x for GDB built"
 
+# Version of the sfnipmodel program for GDB (GNU debugger)
+nipmodel.x:	$(SRCNIPMODEL)
+	gcc -g $^ -I$$RSFSRC/include -I.. -L$$RSFSRC/lib -o $@ -lrsf -lm
+	@echo "Program nipmodel.x for GDB built"
+
 clean:
 	rm *.x
+
+.PHONY: clean niptomo.x nipmodel.x

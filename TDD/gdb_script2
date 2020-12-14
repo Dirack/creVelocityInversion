@@ -1,0 +1,9 @@
+# Command scripts for GNU debugger (GDB)
+#
+# You can call this script to set up the program nipmodel.x
+# for debugging. Inside GDB session call it:
+# source gdb_script
+
+cd nipmodelDebug
+set args < model.rsf shotsfile=shotsfile.rsf anglefile=anglefile.rsf t0s=t0s.rsf x=x.rsf >time.rsf
+show args

@@ -1,4 +1,8 @@
-/* NIP tomography ray tracer */
+/* Set up NIP model to NIP tomography
+
+Trace Normal rays from acquisition surface into the model to estimate NIP point sources position.
+
+ */
 
 #include <math.h>
 
@@ -6,31 +10,32 @@
 
 #include "raytrace.h"
 
+#define DT 0.001
+
 int main(int argc, char* argv[])
 {
-	bool verb;
-	int n[2];
-	float d[2];
-	float o[2];
-	float t;
-	float** s;
-	int ndim;
-	int nshot;
-	int nm;
-	float* a;
-	int nr;
-	float* slow;
-	int im;
-	float v0;
-	int nt0;
-	float dt0;
-	float* t0;
-	int nt;
-	int it,ir;
-	float** traj;
-	float x[2];
-	float p[2];
-	int i;
+	bool verb; // Verbose parameter
+	int n[2]; // Velocity grid dimensions n[0]=n1, n[1]=n2
+	float d[2]; // Velocity grid sampling d[0]=d1, d[1]=d2
+	float o[2]; // Velocity grid origin o[0]=o1, o[1]=o2
+	float t; // Ray escape angle at NIP point
+	float** s; // NIP source position (z,x)
+	int ndim; // n1 dimension in shotsfile, shoul be equal 2
+	int nshot; // n2 dimension in shotsfile
+	int nm; // Number of samples in velocity grid
+	float* a; // Normal Ray initial angle
+	int nr; // Number of rays to trace
+	float* slow; // slowness
+	int im; // loop counter
+	float v0; // Velocity
+	int nt0; // Number of normal rays to trace
+	float* t0; // Normal ray traveltime
+	int nt; // Number of time samples
+	int it,ir; // loop counters
+	float** traj; // Ray trajectory (z,x)
+	float x[2]; // Ray initial position
+	float p[2]; // Ray initial slowness vector
+	int i; // loop counter
 	sf_file shots, vel, rays, angles, t0s, nipangles;
 	raytrace rt;
 
@@ -73,8 +78,7 @@ int main(int argc, char* argv[])
 	if(!sf_histint(t0s,"n1",&nt0)) sf_error("No n1= in t0s file");
 	t0 = sf_floatalloc(nt0);
 	sf_floatread(t0,nt0,t0s);
-	dt0=0.001;
-	sf_putfloat(rays,"d1",dt0);
+	sf_putfloat(rays,"d1",DT);
 	sf_putfloat(rays,"o1",o[0]);
 	sf_putfloat(rays,"o2",180.);
 	sf_putfloat(rays,"d2",1.);
@@ -92,26 +96,36 @@ int main(int argc, char* argv[])
 	sf_putint(rays,"n1",nr);
 	sf_putint(rays,"n2",1);
 	sf_settype(rays,SF_COMPLEX);
-	sf_putstring(rays,"label1","time");
-	sf_putstring(rays,"unit1","s");
+	sf_putstring(rays,"label1","Position");
+	sf_putstring(rays,"unit1","z,x");
 	sf_putstring(rays,"label2","Degrees");
 	sf_putstring(rays,"unit2","Angle");
 	sf_fileflush(rays,NULL);
 	sf_settype(rays,SF_FLOAT);
 
+	sf_putint(nipangles,"n1",nr);
+	sf_putint(nipangles,"n2",1);
+	sf_putstring(nipangles,"label1","Angle");
+	sf_putstring(nipangles,"unit1","Degrees");
+
 	if(verb){
 		sf_warning("Input file (Velocity model)");
 		sf_warning("n1=%d d1=%f o1=%f",*n,*d,*o);
 		sf_warning("n2=%d d2=%f o2=%f",*(n+1),*(d+1),*(o+1));
-		sf_warning("Command line parameters");
-		sf_warning("");
+		sf_warning("Input file (shotsfile)");
+		sf_warning("n1=%d",ndim);
+		sf_warning("n2=%d",nshot);
+		sf_warning("Input file (anglefile)");
+		sf_warning("n1=%d",nr);
+		sf_warning("Input file (t0s file)");
+		sf_warning("n1=%d",nt0);
 	}
 
 	for(ir=0; ir<nr; ir++){
 
 		/* initialize ray tracing object */
-		nt = (int) t0[ir]/dt0;
-		rt = raytrace_init(2,true,nt,dt0,n,o,d,slow,ORDER);
+		nt = (int) t0[ir]/DT;
+		rt = raytrace_init(2,true,nt,DT,n,o,d,slow,ORDER);
 
 		/* Ray tracing */
 		traj = sf_floatalloc2(ndim,nt+1);
@@ -127,8 +141,10 @@ int main(int argc, char* argv[])
 
 		it = trace_ray (rt, x, p, traj);
 
+		/* write ray end points */
 		sf_floatwrite (traj[nt-1],ndim,rays);
 
+		/* write escape angles */
 		if(it>0){
 			i = it >= 2 ? it - 2 : it - 1;
 			/* Escape vector */

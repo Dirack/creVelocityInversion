@@ -1,7 +1,7 @@
 import unittest
 import sys,os
 
-sys.path.append('/usr/local/lib/python2.7/dist-packages/scons/')
+sys.path.append('/usr/lib/scons/')
 from rsf.proj import *
 
 testdir = os.path.dirname(os.environ['PWD'])+'/experiments/algorithmVelocityInversion/'

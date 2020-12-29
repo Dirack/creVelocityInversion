@@ -3,29 +3,23 @@
 #
 # SConstruct (Python)
 # 
-# Objetivo: Exemplo de uso do programa sfrays2.
+# Purpose: Test sfnipmodsetup in a constan velocity model.
 # 
 # Site: https://dirack.github.io
 # 
-# Versão 1.0
+# Version 1.0
 # 
-# Programador: Rodolfo A C Neves (Dirack) 02/12/2020
+# Programer: Rodolfo A C Neves (Dirack) 02/12/2020
 # 
 # Email: rodolfo_profissional@hotmail.com
 # 
-# Licença: GPL-3.0 <https://www.gnu.org/licenses/gpl-3.0.txt>.
+# License: GPL-3.0 <https://www.gnu.org/licenses/gpl-3.0.txt>.
 
 from rsf.proj import *
 
 # create a model
 amp=1
 rad=1
-#Flow('model',None,
-#     '''
-#     math n1=301 d1=0.01 o1=0 n2=1001 d2=0.01 o2=0 output="1+2*x1+0.5*x2" |
-#     math output="input+%g*exp(-((x1-1.5)*(x1-1.5)+(x2-5)*(x2-5))/(%g*%g))" |
-#     put label1=Depth unit1=km label2=Position unit2=km
-#     ''' % (amp,rad,rad))
 
 # Constant velocity model for test
 Flow('model',None,
@@ -53,7 +47,7 @@ Flow('t0s',None,'spike n1=2 mag=1')
 # do a ray-tracing
 Flow(['ray','nipangles'],['model','shotsfile','anglefile','t0s'],
         '''
-        niptomo shotsfile=${SOURCES[1]} anglefile=${SOURCES[2]} t0s=${SOURCES[3]} nipangles=${TARGETS[1]}
+        nipmodsetup shotsfile=${SOURCES[1]} anglefile=${SOURCES[2]} t0s=${SOURCES[3]} nipangles=${TARGETS[1]}
         ''')
 
 # plot the ray

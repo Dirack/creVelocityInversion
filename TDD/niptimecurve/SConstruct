@@ -3,7 +3,7 @@
 #
 # SConstruct (Python)
 # 
-# Purpose: Program sfnipmodel test in a constant velocity model.
+# Purpose: Program sfniptimecurve test in a constant velocity model.
 # 
 # Site: https://dirack.github.io
 # 
@@ -48,7 +48,7 @@ Flow('t0s',None,'spike n1=2 mag=1')
 Flow(['tCoordinates','xCoordinates'],
 	['model','shotsfile','anglefile','t0s'],
         '''
-        nipmodel shotsfile=${SOURCES[1]} anglefile=${SOURCES[2]} t0s=${SOURCES[3]} x=${TARGETS[1]}
+        niptimecurve shotsfile=${SOURCES[1]} anglefile=${SOURCES[2]} t0s=${SOURCES[3]} x=${TARGETS[1]}
         ''')
 
 End()

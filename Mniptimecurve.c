@@ -1,7 +1,6 @@
 /* NIP Point source modeling ray tracer 
 
-Trace rays from NIP sources to acquisition surface in order to get
-traveltime curves used in NIP tomography.
+Trace rays from NIP sources to acquisition surface in order to get traveltime curves used in NIP tomography.
 
 */
 

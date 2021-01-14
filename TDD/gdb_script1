@@ -2,7 +2,7 @@
 #
 # You can call this script to set up the program nipmodsetup.x
 # for debugging. Inside GDB session call it:
-# source gdb_script
+# source gdb_script1
 
 cd nipmodsetup
 set args < model.rsf shotsfile=shotsfile.rsf anglefile=anglefile.rsf t0s=t0s.rsf

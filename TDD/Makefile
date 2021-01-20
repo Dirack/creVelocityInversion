@@ -18,7 +18,7 @@ DEP = $(addprefix test_, $(SRC))
 SRCNIPTOMO= ../Mnipmodsetup.c ../raytrace.c ../grid2.c ../atela.c
 SRCNIPMODEL= ../Mniptimecurve.c ../raytrace.c ../grid2.c ../atela.c
 
-all:	$(DEP)
+all:	$(DEP) integ
 
 test_%:
 	@echo $@

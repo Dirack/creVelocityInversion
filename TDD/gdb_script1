@@ -5,5 +5,5 @@
 # source gdb_script1
 
 cd nipmodsetup
-set args < model.rsf shotsfile=shotsfile.rsf anglefile=anglefile.rsf t0s=t0s.rsf
+set args < model.rsf shotsfile=shotsfile.rsf anglefile=anglefile.rsf t0s=t0s.rsf nipangles=nipangles.rsf > ray.rsf
 show args

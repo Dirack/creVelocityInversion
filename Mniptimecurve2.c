@@ -41,7 +41,8 @@ int main(int argc, char* argv[])
 	int nxd; // number of x samples in the data
 	float* td; // t coordinate of the data
 	float* xd; // x coordinate of the data
-	float* tmis; // data misfit vector
+	float* tmis; // data misfit t vector
+	float* xmis; // data misfit x vector
 	sf_file shots, vel, angles, timeCurve, xCurve, xdata, tdata;
 	raytrace rt;
 
@@ -78,6 +79,7 @@ int main(int argc, char* argv[])
 	if(!sf_histint(angles,"n1",&ns)) sf_error("No n1= in anglefile");
 	a = sf_floatalloc(ns);
 	sf_floatread(a,ns,angles);
+	if(ns!=nshot) sf_error("n1 in anglefile should be equal to n2 in shotsfile!");
 
 	/* Read (t,x) true data */
 	if(!sf_histint(tdata,"n1",&ntd)) sf_error("No n1= in tdata file");
@@ -88,6 +90,7 @@ int main(int argc, char* argv[])
 	xd = sf_floatalloc(nxd);
 	sf_floatread(xd,nxd,xdata);
 	tmis = sf_floatalloc(ntd);
+	xmis = sf_floatalloc(nxd);
 	
 	/* get slowness squared */
 	nm = n[0]*n[1];
@@ -152,8 +155,9 @@ int main(int argc, char* argv[])
 			raytrace_close(rt);
 			free(traj);
 
-			/* Calculate data misfit */
+			/* Calculate data misfit (t,x) */
 			tmis[ir] = td[ir] - t;
+			xmis[ir] = xd[ir] - x[1];
 		} /* Loop over rays */
 
 	} /* Loop over NIP sources */

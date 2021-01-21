@@ -49,7 +49,7 @@ x=(4.499, 4.711, 4.866, 5, 5.134, 5.289, 5.501)
 # Constant velocity model for test
 Flow('model',None,
      '''
-     spike n1=301 d1=0.01 o1=0 n2=1001 d2=0.01 o2=0 mag=1.5 |
+     spike n1=301 d1=0.01 o1=0 n2=1001 d2=0.01 o2=0 mag=1.4 |
      put label1=Depth unit1=km label2=Position unit2=km
      ''' )
 
@@ -59,5 +59,24 @@ Plot('model','model','grey color=j scalebar=y label1=Depth unit1=km label2=Posit
 # Generate traveltime curve
 buildVectorFile('t',t)
 buildVectorFile('x',x)
+
+Flow('s1',None,
+        '''
+        math n1=2 d1=1 o1=1 n2=1 o2=1 d2=1 output="x1+4"
+        ''')
+
+Flow('s2',None,'spike n1=2 d1=1 o1=1 n2=1 o2=1 d2=1 mag=0.5')
+
+Flow('shotsfile',['s2','s1'],'rcat ${SOURCES[1]} axis=2 | transp')
+
+Flow('anglefile',None,'spike n1=2 mag=0')
+
+Flow('t0s',None,'spike n1=2 mag=1')
+
+Flow(['tCoordinates','xCoordinates'],
+	['model','shotsfile','anglefile','t0s','t','x'],
+	'''
+	niptimecurve2 shotsfile=${SOURCES[1]} anglefile=${SOURCES[2]} t0s=${SOURCES[3]} x=${TARGETS[1]}	tdata=${SOURCES[4]} xdata=${SOURCES[5]}
+	''')
 
 End()

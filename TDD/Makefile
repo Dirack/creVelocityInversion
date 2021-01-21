@@ -17,6 +17,7 @@ SRC = diffmig diffsimul
 DEP = $(addprefix test_, $(SRC)) 
 SRCNIPTOMO= ../Mnipmodsetup.c ../raytrace.c ../grid2.c ../atela.c
 SRCNIPMODEL= ../Mniptimecurve.c ../raytrace.c ../grid2.c ../atela.c
+SRCNIPMODEL2= ../Mniptimecurve2.c ../raytrace.c ../grid2.c ../atela.c
 
 all:	$(DEP) integ
 
@@ -40,7 +41,12 @@ niptimecurve.x:	$(SRCNIPMODEL)
 	@echo "Program niptimecurve.x for GDB built"
 	gdb -q --command=gdb_script2 --args $@
 
+# Version of the sfniptimecurve2 program for GDB (GNU debugger)
+niptimecurve2.x:	$(SRCNIPMODEL2)
+	gcc -g $^ -I$$RSFSRC/include -I.. -L$$RSFSRC/lib -o $@ -lrsf -lm
+	@echo "Program niptimecurve2.x for GDB built"
+	gdb -q --command=gdb_script3 --args $@
 clean:
 	rm *.x
 
-.PHONY: clean nipmodsetup.x niptimecurve.x
+.PHONY: clean nipmodsetup.x niptimecurve.x niptimecurve2.x

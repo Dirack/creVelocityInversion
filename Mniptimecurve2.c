@@ -37,7 +37,11 @@ int main(int argc, char* argv[])
 	float x[2]; // Ray initial position
 	float p[2]; // Ray initial slowness vector
 	float currentRayAngle; // Ray initial angle
-	sf_file shots, vel, angles, timeCurve,xCurve;
+	int ntd; // number of time samples in the data
+	int nxd; // number of x samples in the data
+	float* td; // t coordinate of the data
+	float* xd; // x coordinate of the data
+	sf_file shots, vel, angles, timeCurve, xCurve, xdata, tdata;
 	raytrace rt;
 
 	sf_init(argc,argv);
@@ -47,6 +51,8 @@ int main(int argc, char* argv[])
 	timeCurve = sf_output("out");
 	xCurve = sf_output("x");
 	angles = sf_input("anglefile");
+	tdata = sf_input("tdata");
+	xdata = sf_input("xdata");
 
 	/* Velocity model: get 2D grid parameters */
 	if(!sf_histint(vel,"n1",n)) sf_error("No n1= in input");
@@ -72,6 +78,14 @@ int main(int argc, char* argv[])
 	a = sf_floatalloc(ns);
 	sf_floatread(a,ns,angles);
 
+	/* Read (t,x) true data */
+	if(!sf_histint(tdata,"n1",&ntd)) sf_error("No n1= in tdata file");
+	if(!sf_histint(xdata,"n1",&nxd)) sf_error("No n1= in xdata file");
+	if(ntd!=nxd) sf_error("n1 dimension in tdata should be equal to n1 in xdata!");
+	td = sf_floatalloc(ntd);
+	sf_floatread(td,ntd,tdata);
+	xd = sf_floatalloc(nxd);
+	sf_floatread(xd,nxd,xdata);
 
 	/* get slowness squared */
 	nm = n[0]*n[1];

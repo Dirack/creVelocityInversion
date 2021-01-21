@@ -1,0 +1,9 @@
+# Command scripts for GNU debugger (GDB)
+#
+# You can call this script to set up the program niptimecurve2.x
+# for debugging. Inside GDB session call it:
+# source gdb_script3
+
+cd datamisfit
+set args < model.rsf shotsfile=shotsfile.rsf anglefile=anglefile.rsf t0s=t0s.rsf x=x.rsf tdata=t.rsf xdata=x.rsf >time.rsf
+show args

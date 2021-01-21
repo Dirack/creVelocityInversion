@@ -41,6 +41,7 @@ int main(int argc, char* argv[])
 	int nxd; // number of x samples in the data
 	float* td; // t coordinate of the data
 	float* xd; // x coordinate of the data
+	float* tmis; // data misfit vector
 	sf_file shots, vel, angles, timeCurve, xCurve, xdata, tdata;
 	raytrace rt;
 
@@ -86,7 +87,8 @@ int main(int argc, char* argv[])
 	sf_floatread(td,ntd,tdata);
 	xd = sf_floatalloc(nxd);
 	sf_floatread(xd,nxd,xdata);
-
+	tmis = sf_floatalloc(ntd);
+	
 	/* get slowness squared */
 	nm = n[0]*n[1];
 	slow =  sf_floatalloc(nm);
@@ -149,7 +151,11 @@ int main(int argc, char* argv[])
 			/* Raytrace close */
 			raytrace_close(rt);
 			free(traj);
-		}
-	}
+
+			/* Calculate data misfit */
+			tmis[ir] = td[ir] - t;
+		} /* Loop over rays */
+
+	} /* Loop over NIP sources */
 
 }

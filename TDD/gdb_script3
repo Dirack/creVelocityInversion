@@ -5,5 +5,5 @@
 # source gdb_script3
 
 cd datamisfit
-set args < model.rsf shotsfile=shotsfile.rsf anglefile=anglefile.rsf t0s=t0s.rsf x=x.rsf tdata=t.rsf xdata=x.rsf >time.rsf
+set args < model.rsf shotsfile=shotsfile.rsf anglefile=anglefile.rsf t0s=t0s.rsf x=xCoordinate.rsf tdata=t.rsf xdata=x.rsf >tCoordinate.rsf
 show args

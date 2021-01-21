@@ -62,16 +62,16 @@ buildVectorFile('x',x)
 
 Flow('s1',None,
         '''
-        math n1=1 d1=1 o1=1 n2=1 o2=1 d2=1 output="x1+4"
+        math n1=3 d1=1 o1=1 n2=1 o2=1 d2=1 output="5"
         ''')
 
-Flow('s2',None,'spike n1=1 d1=1 o1=1 n2=1 o2=1 d2=1 mag=0.5')
+Flow('s2',None,'spike n1=3 d1=1 o1=1 n2=1 o2=1 d2=1 mag=0.5')
 
 Flow('shotsfile',['s2','s1'],'rcat ${SOURCES[1]} axis=2 | transp')
 
-Flow('anglefile',None,'spike n1=1 mag=0')
+Flow('anglefile',None,'spike n1=3 mag=0')
 
-Flow('t0s',None,'spike n1=1 mag=1')
+Flow('t0s',None,'spike n1=3 mag=1')
 
 Flow(['tCoordinates','xCoordinates'],
 	['model','shotsfile','anglefile','t0s','t','x'],

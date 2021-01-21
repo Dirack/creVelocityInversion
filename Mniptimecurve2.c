@@ -12,7 +12,16 @@ Trace rays from NIP sources to acquisition surface in order to get traveltime cu
 
 #define DANGLE 15.0
 #define INITIAL_ANGLE 45.0
+#define DSLOW 0.04
 
+void updatevelmodel(int nm, float* slow){
+
+	int im;
+
+	for(im=0;im<nm;im++){
+		slow[im] -= DSLOW;
+	}
+}
 int main(int argc, char* argv[])
 {
 	bool verb; // Verbose parameter
@@ -160,6 +169,7 @@ int main(int argc, char* argv[])
 			xmis[ir] = xd[ir] - x[1];
 		} /* Loop over rays */
 
+		updatevelmodel(nm,slow);
 	} /* Loop over NIP sources */
 
 }

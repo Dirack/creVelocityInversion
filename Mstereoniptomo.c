@@ -1,17 +1,12 @@
-/* NIP Point source modeling ray tracer 
+/* Ray tracer based on stereotomography strategy
 
 Trace rays from NIP sources to acquisition surface in order to get traveltime curves used in NIP tomography.
 
 */
 
 #include <math.h>
-
 #include <rsf.h>
-
-#include "raytrace.h"
-
-#define DANGLE 15.0
-#define INITIAL_ANGLE 45.0
+#include "tomography.h"
 
 int main(int argc, char* argv[])
 {
@@ -19,26 +14,26 @@ int main(int argc, char* argv[])
 	int n[2]; // Velocity grid dimensions n[0]=n1, n[1]=n2
 	float d[2]; // Velocity grid sampling d[0]=d1, d[1]=d2
 	float o[2]; // Velocity grid origin o[0]=o1, o[1]=o2
-	float t; // Ray traveltime
 	float** s; // NIP source position (z,x)
 	int ndim; // n1 dimension in shotsfile, should be equal 2
 	int nshot; // n2 dimensions in shotsfile
 	int nm; // Number of samples in velocity grid
 	float* a; // Normal Ray initial angle
-	int nr=7; // Number of rays to trace
+	int nr=2; // Number of rays to trace
 	float* slow; // slowness
 	int im; // loop counter
-	float v0; // Velocity
-	float dt=0.001; // ray time sampling
-	int nt=3000; // Numer of time samples for each ray
+	float v; // Velocity
+	float v0; // Near surface velocity
 	int ns; // Number of NIP sources
-	int it,ir,is; // loop counters
-	float** traj; // Ray trajectory (z,x)
+	int is; // Loop counter for NIP sources
+	int ir; // Loop counter of reflection rays
+	int i; // Loop over iterations
 	float x[2]; // Ray initial position
-	float p[2]; // Ray initial slowness vector
-	float currentRayAngle; // Ray initial angle
-	sf_file shots, vel, angles, timeCurve,xCurve;
-	raytrace rt;
+	float tmis[1]; // data misfit t vector
+	float dmis;
+	float *ts, *tr, *xs, *xr, offset, cmp;
+	float *m0, *t0, *RNIP, *BETA;
+	sf_file shots, vel, angles, timeCurve, xCurve, m0s, t0s, rnips, betas;
 
 	sf_init(argc,argv);
 
@@ -47,6 +42,10 @@ int main(int argc, char* argv[])
 	timeCurve = sf_output("out");
 	xCurve = sf_output("x");
 	angles = sf_input("anglefile");
+	m0s = sf_input("m0s");
+	t0s = sf_input("t0s");
+	rnips = sf_input("rnips");
+	betas = sf_input("betas");
 
 	/* Velocity model: get 2D grid parameters */
 	if(!sf_histint(vel,"n1",n)) sf_error("No n1= in input");
@@ -58,6 +57,9 @@ int main(int argc, char* argv[])
 	
 	if(!sf_getbool("verb",&verb)) verb=true;
 	/* verbose */
+
+	if(!sf_getfloat("v0",&v0)) v0=1.5;
+	/* Near surface velocity (Km/s) */
 
 	/* Shotsfile: get m0 shot points */
 	if(!sf_histint(shots,"n1",&ndim) || 2 != ndim)
@@ -71,7 +73,17 @@ int main(int argc, char* argv[])
 	if(!sf_histint(angles,"n1",&ns)) sf_error("No n1= in anglefile");
 	a = sf_floatalloc(ns);
 	sf_floatread(a,ns,angles);
+	if(ns!=nshot) sf_error("n1 in anglefile should be equal to n2 in shotsfile!");
 
+	/* allocate parameters vectors */
+	m0 = sf_floatalloc(ns);
+	sf_floatread(m0,ns,m0s);
+	t0 = sf_floatalloc(ns);
+	sf_floatread(t0,ns,t0s);
+	RNIP = sf_floatalloc(ns);
+	sf_floatread(RNIP,ns,rnips);
+	BETA = sf_floatalloc(ns);
+	sf_floatread(BETA,ns,betas);
 
 	/* get slowness squared */
 	nm = n[0]*n[1];
@@ -79,8 +91,8 @@ int main(int argc, char* argv[])
 	sf_floatread(slow,nm,vel);
 
 	for(im=0;im<nm;im++){
-		v0 = slow[im];
-		slow[im] = 1./(v0*v0);
+		v = slow[im];
+		slow[im] = 1./(v*v);
 	}
 
 	if(verb){
@@ -94,48 +106,43 @@ int main(int argc, char* argv[])
 		sf_warning("n1=%d",ns);
 	}
 
-	sf_putint(xCurve,"n1",nr);
+	sf_putint(xCurve,"n1",2);
 	sf_putint(xCurve,"n2",ns);
-	sf_putint(timeCurve,"n1",nr);
+	sf_putint(timeCurve,"n1",2);
 	sf_putint(timeCurve,"n2",ns);
 
-	for(is=0; is<ns; is++){
-		for(ir=0; ir<nr; ir++){
+	ts = sf_floatalloc(nr);
+	xs = sf_floatalloc(nr);
+	tr = sf_floatalloc(nr);
+	xr = sf_floatalloc(nr);
 
-			/* initialize ray tracing object */
-			rt = raytrace_init(2,true,nt,dt,n,o,d,slow,ORDER);
+	for(i=0; i<MAX_ITERATIONS;i++){
 
-			/* Ray tracing */
-			traj = sf_floatalloc2(ndim,nt+1);
-			
+		for(is=0; is<ns; is++){
+
 			/* initialize position */
-			x[0] = s[is][0]; 
+			x[0] = s[is][0];
 			x[1] = s[is][1];
 
-			/* initialize direction */
-			currentRayAngle=(-INITIAL_ANGLE+ir*DANGLE+a[is])*DEG2RAD;
-			p[0] = -cosf(currentRayAngle);
-			p[1] = sinf(currentRayAngle);
+			raystraveltimes(ts,tr,xs,xr,x,a[is],n,o,d,slow,nr);
 
-			it = trace_ray (rt, x, p, traj);
+			/*for(ir=0;ir<nr;ir++){
 
-			if(it>0){
-				t = it*dt;
-				sf_floatwrite(&traj[it][1],1,xCurve);
-			}else if(it == 0){
-				t = abs(nt)*dt;
-				sf_floatwrite(&traj[nt][1],1,xCurve);
-			}else{
-				t = -it * dt;
-				sf_floatwrite(&traj[-it][1],1,xCurve);
-			}
+				 Calculte data misfit (t,x) 
+				offset=(xr[ir]-xs[ir])/2.;
+				cmp=(xr[ir]+xs[ir])/2.;
+				tmis[is] = creTimeApproximation(offset,cmp,v0,t0[is],m0[is],RNIP[is],BETA[is],0) - (ts[ir] + tr[ir]);
+				sf_warning("t=%f tcre=%f tmis=%f xs=%f xr=%f",(ts[ir]+tr[ir]),tmis[is]+(ts[ir]+tr[ir]),
+				tmis[is],xs[ir],xr[ir]);
+				dmis += tmis[is];
+			} Loop over reflection rays */
 
-			sf_floatwrite(&t,1,timeCurve);
 
-			/* Raytrace close */
-			raytrace_close(rt);
-			free(traj);
-		}
-	}
+		} /* Loop over NIP sources */
 
+		/* TODO */
+		updatevelmodel(x,slow,dmis,i);
+		dmis = 0;
+
+	} /* Loop over iterations */
 }

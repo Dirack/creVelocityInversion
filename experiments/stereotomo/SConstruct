@@ -31,13 +31,13 @@ Flow('model',None,
 # plot the model
 Plot('model','model','grey color=j scalebar=y label1=Depth unit1=km label2=Position unit2=km barlabel=Velocity barunit=km/s barreverse=y title="Constant Velocity Model" allpos=y')
 
-Flow('s2',None,'spike n1=3 d1=1 o1=0 n2=1 o2=1 d2=0 mag=0')
+Flow('s2',None,'spike n1=26 d1=1 o1=0 n2=1 o2=1 d2=0 mag=0')
 
 Flow('shotsfile',['s2','m0s'],'rcat ${SOURCES[1]} axis=2 | transp')
 
 Flow('anglefile',['beta','t0s','m0s'],
 	'''
-	getbetaangle t0s=${SOURCES[1]} m0s=${SOURCES[2]} beta=y
+	getparameter t0s=${SOURCES[1]} m0s=${SOURCES[2]} beta=y
 	''')
 
 # do a ray-tracing
@@ -48,7 +48,7 @@ Flow(['ray','nipangles'],['model','shotsfile','anglefile','t0s'],
 
 # Rotate nipangles
 Flow('angles','nipangles','math output="input-180"')
-Flow('nipsources','ray','dd type=float | put n1=2 n2=3')
+Flow('nipsources','ray','dd type=float | put n1=2 n2=26')
 
 # do a ray-tracing from NIP sources
 Flow(['tCoordinates','xCoordinates'],

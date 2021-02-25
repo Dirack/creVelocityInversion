@@ -126,16 +126,16 @@ int main(int argc, char* argv[])
 
 			raystraveltimes(ts,tr,xs,xr,x,a[is],n,o,d,slow,nr);
 
-			/*for(ir=0;ir<nr;ir++){
+			for(ir=0;ir<nr;ir++){
 
-				 Calculte data misfit (t,x) 
+				/* Calculte data misfit (t,x) */
 				offset=(xr[ir]-xs[ir])/2.;
 				cmp=(xr[ir]+xs[ir])/2.;
 				tmis[is] = creTimeApproximation(offset,cmp,v0,t0[is],m0[is],RNIP[is],BETA[is],0) - (ts[ir] + tr[ir]);
 				sf_warning("t=%f tcre=%f tmis=%f xs=%f xr=%f",(ts[ir]+tr[ir]),tmis[is]+(ts[ir]+tr[ir]),
 				tmis[is],xs[ir],xr[ir]);
 				dmis += tmis[is];
-			} Loop over reflection rays */
+			} /*Loop over reflection rays */
 
 
 		} /* Loop over NIP sources */

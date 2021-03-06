@@ -19,6 +19,7 @@ SRCNIPTOMO= ../Mnipmodsetup.c ../raytrace.c ../grid2.c ../atela.c
 SRCNIPMODEL= ../Mniptimecurve.c ../raytrace.c ../grid2.c ../atela.c
 SRCNIPMODEL2= ../Mniptimecurve2.c ../raytrace.c ../grid2.c ../atela.c
 SRCGETPARAM= ../Mgetparameter.c
+SRCSTEREO = ../Mstereoniptomo.c ../tomography.c ../raytrace.c ../grid2.c ../atela.c
 
 all:	$(DEP) integ
 
@@ -66,7 +67,13 @@ setup2:	setup1
 plotnip:	setup2
 	cd stereoniptomo && ./viewNipSources.py
 
+# Version of the sfstereoniptomo program for GDB (GNU debugger)
+stereoniptomo.x:	setup1 $(SRCSTEREO)
+	gcc -DGDB_DEBUG -g $(SRCSTEREO) -I$$RSFSRC/include -I.. -L$$RSFSRC/lib -o $@ -lrsf -lm
+	@echo "Program getparameter.x for GDB built"
+	gdb -q --command=gdb_script5 --args $@
+
 clean:
 	rm *.x
 
-.PHONY: clean nipmodsetup.x niptimecurve.x niptimecurve2.x getparameter.x
+.PHONY: clean nipmodsetup.x niptimecurve.x niptimecurve2.x getparameter.x stereoniptomo.x

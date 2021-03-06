@@ -1,0 +1,9 @@
+# Command scripts for GNU debugger (GDB)
+#
+# You can call this script to set up the program stereoniptomo.x
+# for debugging. Inside GDB session call it:
+# source gdb_script5
+
+cd stereoniptomo
+set args <model.rsf shotsfile=nipsources.rsf anglefile=angles.rsf t0s=t0s.rsf m0s=m0s.rsf rnips=rnips.rsf betas=betas.rsf x=xCoordinates.rsf > testes.rsf
+show args

@@ -5,9 +5,15 @@
 #include "raytrace.h"
 #include "tomography.h"
 
-#define DSLOW 0.04
-#define DANGLE 5.0
-#define MAX_ITERATIONS 2
+#ifndef GDB_DEBUG
+	#define DSLOW 0.04
+	#define DANGLE 5.0
+	#define MAX_ITERATIONS 2
+#else
+	#define DSSLOW 0.04
+	#define DANGLE 5.0
+	#define MAX_ITERATIONS 1
+#endif
 /*^*/
 
 void updatevelmodel(float* x, float* slow, int nm, float dmis,int i){
@@ -81,6 +87,9 @@ void raystraveltimes(
 	s[0] = x[0];
 	s[1] = x[1];
 
+	#ifdef GDB_DEBUG
+	nr=2;
+	#endif
 	for(ir=0;ir<nr;ir++){
 
 		for(i=0; i<2; i++){

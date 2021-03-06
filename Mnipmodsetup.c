@@ -124,7 +124,7 @@ int main(int argc, char* argv[])
 	for(ir=0; ir<nr; ir++){
 
 		/* initialize ray tracing object */
-		nt = (int) t0[ir]/DT;
+		nt = (int) t0[ir]/(DT);
 		rt = raytrace_init(2,true,nt,DT,n,o,d,slow,ORDER);
 
 		/* Ray tracing */

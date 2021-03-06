@@ -141,7 +141,7 @@ int main(int argc, char* argv[])
 		} /* Loop over NIP sources */
 
 		/* TODO */
-		updatevelmodel(x,slow,dmis,i);
+		updatevelmodel(x,slow,nm,dmis,i);
 		dmis = 0;
 
 	} /* Loop over iterations */

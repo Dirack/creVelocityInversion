@@ -7,11 +7,16 @@
 
 #define DSLOW 0.04
 #define DANGLE 5.0
-#define MAX_ITERATIONS 1
+#define MAX_ITERATIONS 2
 /*^*/
 
-void updatevelmodel(float* x, float* slow, float dmis,int i){
-/*< TODO >*/
+void updatevelmodel(float* x, float* slow, int nm, float dmis,int i){
+/*< TODO update velocity model >*/
+	float v;
+	int im;
+	for(im=0;im<nm;im++){
+		slow[im]-=0.01;
+	}
 }
 
 float creTimeApproximation(float h, 

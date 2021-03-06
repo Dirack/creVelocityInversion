@@ -22,14 +22,14 @@ Flow('t0s.asc','pick.txt',
 	./ascFormat.sh ${TARGETS} 1
 	''')
 
-Flow('t0s','t0s.asc','dd type=float')
+Flow('t0s','t0s.asc','dd type=float form=native | put n2=1 d2=1 o2=0')
 
 Flow('m0s.asc','pick.txt',
 	'''
 	./ascFormat.sh ${TARGETS} 2
 	''')
 
-Flow('m0s','m0s.asc','dd type=float')
+Flow('m0s','m0s.asc','dd type=float form=native | put n2=1 d2=1 o2=0')
 
 Flow('stackedSection','stackedSection.asc',
 	'''

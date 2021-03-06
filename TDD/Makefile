@@ -49,14 +49,22 @@ niptimecurve2.x:	$(SRCNIPMODEL2)
 	gdb -q --command=gdb_script3 --args $@
 
 # Version of the sfgetparameter program for GDB (GNU debugger)
-getparameter.x:	setup $(SRCGETPARAM)
+getparameter.x:	setup1 $(SRCGETPARAM)
 	gcc -g $(SRCGETPARAM) -I$$RSFSRC/include -I.. -L$$RSFSRC/lib -o $@ -lrsf -lm
 	@echo "Program getparameter.x for GDB built"
 	gdb -q --command=gdb_script4 --args $@
 
-setup:
-	@echo "Setup input files..."
+setup1:
+	@echo "Setup input files for getparameter.x test..."
 	cd stereoniptomo && scons -f SConscript1
+
+setup2:	setup1
+	@echo "Setup input files for NIP sources plot..."
+	cd stereoniptomo && scons nipsources.rsf && scons -f SConscript2
+
+# Plot NIP sources using matplotlib python library
+plotnip:	setup2
+	cd stereoniptomo && ./viewNipSources.py
 
 clean:
 	rm *.x

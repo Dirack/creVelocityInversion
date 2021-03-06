@@ -18,6 +18,7 @@ DEP = $(addprefix test_, $(SRC))
 SRCNIPTOMO= ../Mnipmodsetup.c ../raytrace.c ../grid2.c ../atela.c
 SRCNIPMODEL= ../Mniptimecurve.c ../raytrace.c ../grid2.c ../atela.c
 SRCNIPMODEL2= ../Mniptimecurve2.c ../raytrace.c ../grid2.c ../atela.c
+SRCGETPARAM= ../Mgetparameter.c
 
 all:	$(DEP) integ
 
@@ -46,7 +47,18 @@ niptimecurve2.x:	$(SRCNIPMODEL2)
 	gcc -g $^ -I$$RSFSRC/include -I.. -L$$RSFSRC/lib -o $@ -lrsf -lm
 	@echo "Program niptimecurve2.x for GDB built"
 	gdb -q --command=gdb_script3 --args $@
+
+# Version of the sfgetparameter program for GDB (GNU debugger)
+getparameter.x:	setup $(SRCGETPARAM)
+	gcc -g $(SRCGETPARAM) -I$$RSFSRC/include -I.. -L$$RSFSRC/lib -o $@ -lrsf -lm
+	@echo "Program getparameter.x for GDB built"
+	gdb -q --command=gdb_script4 --args $@
+
+setup:
+	@echo "Setup input files..."
+	cd stereoniptomo && scons -f SConscript1
+
 clean:
 	rm *.x
 
-.PHONY: clean nipmodsetup.x niptimecurve.x niptimecurve2.x
+.PHONY: clean nipmodsetup.x niptimecurve.x niptimecurve2.x getparameter.x

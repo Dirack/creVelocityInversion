@@ -7,6 +7,10 @@ Trace rays from NIP sources to acquisition surface in order to get traveltime cu
 #include <math.h>
 #include <rsf.h>
 #include "tomography.h"
+#include "vfsacrsnh_lib.h"
+#define MAX_ITERATIONS 2
+#define temp0 1
+#define c0 0.01
 
 int main(int argc, char* argv[])
 {
@@ -15,32 +19,29 @@ int main(int argc, char* argv[])
 	float d[2]; // Velocity grid sampling d[0]=d1, d[1]=d2
 	float o[2]; // Velocity grid origin o[0]=o1, o[1]=o2
 	float** s; // NIP source position (z,x)
+	float** cnew;
+	float** ots;
+	float tmis0, otmis=0, deltaE, Em0, PM, temp=1, u=0;
 	int ndim; // n1 dimension in shotsfile, should be equal 2
 	int nshot; // n2 dimensions in shotsfile
 	int nm; // Number of samples in velocity grid
 	float* a; // Normal Ray initial angle
-	int nr=2; // Number of rays to trace
 	float* slow; // slowness
 	int im; // loop counter
 	float v; // Velocity
 	float v0; // Near surface velocity
 	int ns; // Number of NIP sources
 	int is; // Loop counter for NIP sources
-	int ir; // Loop counter of reflection rays
-	int i; // Loop over iterations
-	float x[2]; // Ray initial position
-	float tmis[1]; // data misfit t vector
-	float dmis;
-	float *ts, *tr, *xs, *xr, offset, cmp;
+	int q;
+	float tmis; // data time misfit value
 	float *m0, *t0, *RNIP, *BETA;
-	sf_file shots, vel, angles, timeCurve, xCurve, m0s, t0s, rnips, betas;
+	sf_file out, shots, vel, angles, pots, m0s, t0s, rnips, betas;
 
 	sf_init(argc,argv);
 
 	shots = sf_input("shotsfile");
 	vel = sf_input("in");
-	timeCurve = sf_output("out");
-	xCurve = sf_output("x");
+	out = sf_output("out");
 	angles = sf_input("anglefile");
 	m0s = sf_input("m0s");
 	t0s = sf_input("t0s");
@@ -67,6 +68,8 @@ int main(int argc, char* argv[])
 	if(!sf_histint(shots,"n2",&nshot)) sf_error("No n2= in shotfile");
 	s = sf_floatalloc2(ndim,nshot);
 	sf_floatread(s[0],ndim*nshot,shots);
+	cnew = sf_floatalloc2(ndim,nshot);
+	ots = sf_floatalloc2(ndim,nshot);
 	sf_fileclose(shots);
 
 	/* Anglefile: get initial emergence angle */
@@ -106,43 +109,63 @@ int main(int argc, char* argv[])
 		sf_warning("n1=%d",ns);
 	}
 
-	sf_putint(xCurve,"n1",2);
+	/*sf_putint(xCurve,"n1",2);
 	sf_putint(xCurve,"n2",ns);
 	sf_putint(timeCurve,"n1",2);
-	sf_putint(timeCurve,"n2",ns);
+	sf_putint(timeCurve,"n2",ns);*/
 
-	ts = sf_floatalloc(nr);
-	xs = sf_floatalloc(nr);
-	tr = sf_floatalloc(nr);
-	xr = sf_floatalloc(nr);
+	for (q=0; q <MAX_ITERATIONS; q++){
+			
+		/* calculate VFSA temperature for this iteration */
+		temp=getVfsaIterationTemperature(q,c0,temp0);
+						
+		/* parameter disturbance */
+		disturbParameters(temp,cnew,s,ns);
+											
+		tmis=0;
+	
+		/* Calculate time missfit through forward modeling */		
+		tmis=calculateTimeMissfit(cnew,v0,t0,m0,RNIP,BETA,n,o,d,slow,a,ns);
 
-	for(i=0; i<MAX_ITERATIONS;i++){
+		if(fabs(tmis) > fabs(tmis0) ){
+			otmis = tmis;
+			/* optimized parameters matrix */
+			for(is=0;is<ns;is++){
+				ots[is][0]=cnew[is][0];
+				ots[is][1]=cnew[is][1];
+			}
 
-		for(is=0; is<ns; is++){
+			tmis0 = tmis;			
+		}
 
-			/* initialize position */
-			x[0] = s[is][0];
-			x[1] = s[is][1];
+		/* VFSA parameters update condition */
+		deltaE = -tmis - Em0;
+		
+		/* Metrópolis criteria */
+		PM = expf(-deltaE/temp);
+		
+		if (deltaE<=0){
+			for(is=0;is<ns;is++){
+				s[is][0]=cnew[is][0];
+				s[is][1]=cnew[is][1];
+			}
+			Em0 = -tmis;
+		} else {
+			//u=getRandomNumberBetween0and1();
+			if (PM > u){
+				for(is=0;is<ns;is++){
+					s[is][0]=cnew[is][0];
+					s[is][1]=cnew[is][1];
+				}
+				Em0 = -tmis;
+			}	
+		}	
+		
+	} /* loop over iterations */
 
-			raystraveltimes(ts,tr,xs,xr,x,a[is],n,o,d,slow,nr);
+	sf_floatwrite(ots[0],ndim*ns,out);
 
-			for(ir=0;ir<nr;ir++){
+	/* TODO */
+	//updatevelmodel(x,slow,nm,dmis,i);
 
-				/* Calculte data misfit (t,x) */
-				offset=(xr[ir]-xs[ir])/2.;
-				cmp=(xr[ir]+xs[ir])/2.;
-				tmis[is] = creTimeApproximation(offset,cmp,v0,t0[is],m0[is],RNIP[is],BETA[is],0) - (ts[ir] + tr[ir]);
-				sf_warning("t=%f tcre=%f tmis=%f xs=%f xr=%f",(ts[ir]+tr[ir]),tmis[is]+(ts[ir]+tr[ir]),
-				tmis[is],xs[ir],xr[ir]);
-				dmis += tmis[is];
-			} /*Loop over reflection rays */
-
-
-		} /* Loop over NIP sources */
-
-		/* TODO */
-		updatevelmodel(x,slow,nm,dmis,i);
-		dmis = 0;
-
-	} /* Loop over iterations */
 }

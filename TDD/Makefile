@@ -19,7 +19,7 @@ SRCNIPTOMO= ../Mnipmodsetup.c ../raytrace.c ../grid2.c ../atela.c
 SRCNIPMODEL= ../Mniptimecurve.c ../raytrace.c ../grid2.c ../atela.c
 SRCNIPMODEL2= ../Mniptimecurve2.c ../raytrace.c ../grid2.c ../atela.c
 SRCGETPARAM= ../Mgetparameter.c
-SRCSTEREO = ../Mstereoniptomo.c ../tomography.c ../raytrace.c ../grid2.c ../atela.c
+SRCSTEREO = ../Mstereoniptomo.c ../tomography.c ../raytrace.c ../grid2.c ../atela.c ../vfsacrsnh_lib.c
 
 all:	$(DEP) integ
 

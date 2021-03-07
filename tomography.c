@@ -8,17 +8,15 @@
 #ifndef GDB_DEBUG
 	#define DSLOW 0.04
 	#define DANGLE 5.0
-	#define MAX_ITERATIONS 2
 #else
 	#define DSSLOW 0.04
 	#define DANGLE 5.0
-	#define MAX_ITERATIONS 1
 #endif
 /*^*/
 
 void updatevelmodel(float* x, float* slow, int nm, float dmis,int i){
 /*< TODO update velocity model >*/
-	float v;
+	//float v;
 	int im;
 	for(im=0;im<nm;im++){
 		slow[im]-=0.01;
@@ -60,78 +58,94 @@ float creTimeApproximation(float h,
 	return t;
 }
 
-void raystraveltimes(
-		float *ts, /* sources-NIP rays traveltime */
-		float *tr, /* NIP-receivers rays traveltimes */
-		float *xs, /* sources-NIP rays position */
-		float *xr, /* NIP-receivers rays position */
-		float x[2], /* NIP position */
-		float nrdeg, /* Normal ray angle in degrees */
-		int n[2],
-		float o[2],
-		float d[2],
-		float* slow,
-		int nr /* number of reflection rays */
-		    )
-/*< Return traveltimes of source-NIP-receiver rays and endpoints >*/
+float calculateTimeMissfit(float** s, /* NIP sources matrix */
+			   float v0,
+			   float* t0,
+			   float* m0,
+			   float* RNIP,
+			   float* BETA,
+			   int *n, 
+			   float *o,
+			   float *d,
+			   float *slow,
+			   float *a,
+			   int ns)
+/*< Return time missfit sum of source-NIP-receiver rays >*/
 {
 
 	float currentRayAngle;
-	int i, ir, it;
-	float p[2], s[2], t;
-	float nt=5000;
+	int i, is, ir, it;
+	float p[2], t, nrdeg;
+	int nt=5000, nr=2; //TODO to correct nr
 	float dt=0.001;
 	raytrace rt;
 	float** traj; // Ray trajectory (z,x)
+	float m, h, tmis;
+	float xs, xr, tr, ts, *x;
 
-	s[0] = x[0];
-	s[1] = x[1];
+	x = sf_floatalloc(2);
 
-	#ifdef GDB_DEBUG
-	nr=2;
-	#endif
-	for(ir=0;ir<nr;ir++){
+	for(is=0;is<ns;is++){
 
-		for(i=0; i<2; i++){
+		x[0]=s[is][0];
+		x[1]=s[is][1];
+		nrdeg = a[is]; // TODO is in degree?
+		sf_warning("=> sx=%f sy=%f sa=%f",x[1],x[0],nrdeg);
 
-			/* initialize ray tracing object */
-			rt = raytrace_init(2,true,nt,dt,n,o,d,slow,ORDER);
+		for(ir=0;ir<nr;ir++){
 
-			/* Ray tracing */
-			traj = sf_floatalloc2(2,nt+1);
-			
-			/* initialize ray direction */
-			currentRayAngle=(i==0)?(nrdeg-(ir+1)*DANGLE)*DEG2RAD:(nrdeg+(ir+1)*DANGLE)*DEG2RAD;
+			for(i=0; i<2; i++){
 
-			p[0] = -cosf(currentRayAngle);
-			p[1] = sinf(currentRayAngle);
+				/* initialize ray tracing object */
+				rt = raytrace_init(2,true,nt,dt,n,o,d,slow,ORDER);
 
-			it = trace_ray (rt, x, p, traj);
+				/* Ray tracing */
+				traj = sf_floatalloc2(2,nt+1);
+				
+				/* initialize ray direction */
+				currentRayAngle=(i==0)?(nrdeg-(ir+1)*DANGLE)*DEG2RAD:(nrdeg+(ir+1)*DANGLE)*DEG2RAD;
 
-			if(it>0){
-				t = it*dt;
-				if(i==0){
-					ts[ir]=t;
-					xs[ir]=x[1];
-					sf_warning("ts=%f",ts[ir]);
-				}else{ 
-					tr[ir]=t;
-					xr[ir]=x[1];
-					sf_warning("tr=%f",tr[ir]);
+				p[0] = -cosf(currentRayAngle);
+				p[1] = sinf(currentRayAngle);
+
+				it = trace_ray (rt, x, p, traj);
+
+				if(it>0){
+					t = it*dt;
+					if(i==0){
+						ts=t;
+						xs=x[1];
+						sf_warning("xs=%f ts=%f",xs,ts);
+					}else{ 
+						tr=t;
+						xr=x[1];
+						sf_warning("xr=%f tr=%f",xr,tr);
+					}
+				}else if(it == 0){
+					t = abs(nt)*dt;
+					nt += 1000;
+				}else{
+					sf_warning("=> x=%f y=%f t=%f",s[is][1],s[is][0],t);
+					sf_error("Bad angle, ray get to the model side/bottom");
 				}
-			}else if(it == 0){
-				t = abs(nt)*dt;
-				nt += 1000;
-			}else{
-				sf_error("Bad angle, ray get to the model side/bottom");
-			}
 
-			/* Raytrace close */
-			raytrace_close(rt);
-			free(traj);
+				/* Raytrace close */
+				raytrace_close(rt);
+				free(traj);
 
-			x[0] = s[0];
-			x[1] = s[1];
-		} /* Loop over source-NIP-receiver rays */
-	} /* Loop over reflection rays */
+				x[0] = s[is][0];
+				x[1] = s[is][1];
+			} /* Loop over source-NIP-receiver rays */
+
+			m = (xr+xs)/2.;
+			h = (xr-xs)/2.;
+			t = creTimeApproximation(h,m,v0,t0[is],m0[is],RNIP[is],BETA[is],true);
+			tmis += fabs((ts+tr)-t);
+			sf_warning("=> tc=%f t=%f tmis=%f dtmis=%f\n",t,ts+tr,ts+tr-t,tmis);
+
+		} /* Loop over reflection rays */
+	} /* Loop over NIP sources */
+
+	tmis = (tmis)/(2*ns);
+	return tmis;
 }

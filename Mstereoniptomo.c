@@ -8,7 +8,7 @@ Trace rays from NIP sources to acquisition surface in order to get traveltime cu
 #include <rsf.h>
 #include "tomography.h"
 #include "vfsacrsnh_lib.h"
-#define MAX_ITERATIONS 2
+#define MAX_ITERATIONS 20
 #define temp0 1
 #define c0 0.01
 
@@ -21,7 +21,7 @@ int main(int argc, char* argv[])
 	float** s; // NIP source position (z,x)
 	float** cnew;
 	float** ots;
-	float tmis0, otmis=0, deltaE, Em0, PM, temp=1, u=0;
+	float tmis0=100, otmis=0, deltaE, Em0=0, PM, temp=1, u=0;
 	int ndim; // n1 dimension in shotsfile, should be equal 2
 	int nshot; // n2 dimensions in shotsfile
 	int nm; // Number of samples in velocity grid
@@ -127,19 +127,19 @@ int main(int argc, char* argv[])
 		/* Calculate time missfit through forward modeling */		
 		tmis=calculateTimeMissfit(cnew,v0,t0,m0,RNIP,BETA,n,o,d,slow,a,ns);
 
-		if(fabs(tmis) > fabs(tmis0) ){
-			otmis = tmis;
+		if(fabs(tmis) < fabs(tmis0) ){
+			otmis = fabs(tmis);
 			/* optimized parameters matrix */
 			for(is=0;is<ns;is++){
 				ots[is][0]=cnew[is][0];
 				ots[is][1]=cnew[is][1];
 			}
 
-			tmis0 = tmis;			
+			tmis0 = fabs(tmis);			
 		}
 
 		/* VFSA parameters update condition */
-		deltaE = -tmis - Em0;
+		deltaE = -fabs(tmis) - Em0;
 		
 		/* Metrópolis criteria */
 		PM = expf(-deltaE/temp);
@@ -149,20 +149,27 @@ int main(int argc, char* argv[])
 				s[is][0]=cnew[is][0];
 				s[is][1]=cnew[is][1];
 			}
-			Em0 = -tmis;
+			Em0 = -fabs(tmis);
 		} else {
-			//u=getRandomNumberBetween0and1();
+			u=getRandomNumberBetween0and1();
 			if (PM > u){
 				for(is=0;is<ns;is++){
 					s[is][0]=cnew[is][0];
 					s[is][1]=cnew[is][1];
 				}
-				Em0 = -tmis;
+				Em0 = -fabs(tmis);
 			}	
 		}	
-		
+	
+	sf_warning("%d/%d (%f)",q+1,MAX_ITERATIONS,otmis);	
 	} /* loop over iterations */
 
+	sf_putint(out,"n1",ndim);
+	sf_putint(out,"n2",ns);
+	sf_putfloat(out,"d1",1);
+	sf_putfloat(out,"o1",0);
+	sf_putfloat(out,"d2",1);
+	sf_putfloat(out,"o2",0);
 	sf_floatwrite(ots[0],ndim*ns,out);
 
 	/* TODO */

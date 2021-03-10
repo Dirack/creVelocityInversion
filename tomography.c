@@ -90,7 +90,7 @@ float calculateTimeMissfit(float** s, /* NIP sources matrix */
 		x[0]=s[is][0];
 		x[1]=s[is][1];
 		nrdeg = a[is]; // TODO is in degree?
-		sf_warning("=> sx=%f sy=%f sa=%f",x[1],x[0],nrdeg);
+		//sf_warning("=> sx=%f sy=%f sa=%f",x[1],x[0],nrdeg);
 
 		for(ir=0;ir<nr;ir++){
 
@@ -115,11 +115,11 @@ float calculateTimeMissfit(float** s, /* NIP sources matrix */
 					if(i==0){
 						ts=t;
 						xs=x[1];
-						sf_warning("xs=%f ts=%f",xs,ts);
+						//sf_warning("xs=%f ts=%f",xs,ts);
 					}else{ 
 						tr=t;
 						xr=x[1];
-						sf_warning("xr=%f tr=%f",xr,tr);
+						//sf_warning("xr=%f tr=%f",xr,tr);
 					}
 				}else if(it == 0){
 					t = abs(nt)*dt;
@@ -141,11 +141,11 @@ float calculateTimeMissfit(float** s, /* NIP sources matrix */
 			h = (xr-xs)/2.;
 			t = creTimeApproximation(h,m,v0,t0[is],m0[is],RNIP[is],BETA[is],true);
 			tmis += fabs((ts+tr)-t);
-			sf_warning("=> tc=%f t=%f tmis=%f dtmis=%f\n",t,ts+tr,ts+tr-t,tmis);
+			//sf_warning("=> tc=%f t=%f tmis=%f dtmis=%f\n",t,ts+tr,ts+tr-t,tmis);
 
 		} /* Loop over reflection rays */
 	} /* Loop over NIP sources */
 
-	tmis = (tmis)/(2*ns);
+	tmis = (tmis*tmis)/(2*ns);
 	return tmis;
 }

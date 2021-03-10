@@ -15,9 +15,9 @@
 
 */
 
-#define MAX 2
+#define MAX 3
 #define MIN 0
-#define APERTURE 2
+#define APERTURE 0.5
 #define Rnip_MAX 4
 #define Rnip_MIN 0
 #define RNIP_APERTURE Rnip_MAX-Rnip_MIN
@@ -66,15 +66,15 @@ void disturbParameters(float temperature, float** disturbedParameter, float** pa
 					
 			disturbance = signal(u - 0.5) * temperature * (pow( (1+temperature),fabs(2*u-1) )-1);
 
-			disturbedParameter[is][i] = parameter[is][i] + (disturbance/10) * (APERTURE);
+			disturbedParameter[is][i] = parameter[is][i] + (disturbance/100) * (APERTURE);
 
 			if (disturbedParameter[is][i] >= MAX || disturbedParameter[is][i] <= MIN) {
 
-				disturbedParameter[is][i] = (APERTURE) * getRandomNumberBetween0and1() + MIN;
+				disturbedParameter[is][i] = (APERTURE) * getRandomNumberBetween0and1() + parameter[is][i];
 				
 			}
 
-			sf_warning("d=%f p=%f i=%d d=%f",disturbedParameter[is][i],parameter[is][i],i,disturbance);
+			//sf_warning("d=%f p=%f i=%d d=%f",disturbedParameter[is][i],parameter[is][i],i,disturbance/100);
 		}
 	}
 }

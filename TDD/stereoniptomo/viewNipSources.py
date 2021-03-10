@@ -36,8 +36,20 @@ f.close()
 
 z0 = [0]*len(z)
 
+m=[]
+m0=[]
+i=0
+f = open("modelin.txt","r")
+for line in f:
+	m.append(float(line))
+	m0.append(0.01*i)
+	i=i+1
+
+f.close()
+
 plt.xlim(0, 6)
 plt.ylim(3,0)
 plt.plot(list(x),list(y),'*')
 plt.plot(list(z),list(z0),'v')
+plt.plot(list(m0),list(m),'-')
 plt.show()

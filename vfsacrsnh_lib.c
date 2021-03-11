@@ -51,14 +51,14 @@ float getVfsaIterationTemperature(int iteration,float dampingFactor,float inicia
 
 }
 
-void disturbParameters(float temperature, float** disturbedParameter, float** parameter, int ns /*Number of parameters */){
+void disturbParameters(float temperature, float* disturbedParameter, float* parameter, int ns /*Number of parameters */){
 /*< Perturbar os parâmetros da iteração anterior >*/
 
 	float u;
 	float disturbance;
-	int is, i;
+	int i;
 
-	for(is=0;is<ns;is++){
+	//for(is=0;is<ns;is++){
 
 		for(i=0;i<2;i++){
 
@@ -66,17 +66,17 @@ void disturbParameters(float temperature, float** disturbedParameter, float** pa
 					
 			disturbance = signal(u - 0.5) * temperature * (pow( (1+temperature),fabs(2*u-1) )-1);
 
-			disturbedParameter[is][i] = parameter[is][i] + (disturbance/100) * (APERTURE);
+			disturbedParameter[i] = parameter[i] + (disturbance/100) * (APERTURE);
 
-			if (disturbedParameter[is][i] >= MAX || disturbedParameter[is][i] <= MIN) {
+			if (disturbedParameter[i] >= MAX || disturbedParameter[i] <= MIN) {
 
-				disturbedParameter[is][i] = (APERTURE) * getRandomNumberBetween0and1() + parameter[is][i];
+				disturbedParameter[i] = (APERTURE) * getRandomNumberBetween0and1() + parameter[i];
 				
 			}
 
 			//sf_warning("d=%f p=%f i=%d d=%f",disturbedParameter[is][i],parameter[is][i],i,disturbance/100);
 		}
-	}
+	//}
 }
 
 void nonHyperbolicCRSapp(float t[2*mMAX+1][hMAX], float m0, float dm, float om, float dh, float oh, float t0, float v0, float RN, float RNIP, float BETA){

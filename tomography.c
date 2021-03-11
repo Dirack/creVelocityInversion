@@ -7,10 +7,10 @@
 
 #ifndef GDB_DEBUG
 	#define DSLOW 0.04
-	#define DANGLE 5.0
+	#define DANGLE 1.0
 #else
 	#define DSSLOW 0.04
-	#define DANGLE 5.0
+	#define DANGLE 1.0
 #endif
 /*^*/
 
@@ -58,7 +58,7 @@ float creTimeApproximation(float h,
 	return t;
 }
 
-float calculateTimeMissfit(float** s, /* NIP sources matrix */
+float calculateTimeMissfit(float* s, /* NIP sources matrix */
 			   float v0,
 			   float* t0,
 			   float* m0,
@@ -69,26 +69,26 @@ float calculateTimeMissfit(float** s, /* NIP sources matrix */
 			   float *d,
 			   float *slow,
 			   float *a,
-			   int ns)
+			   int is)
 /*< Return time missfit sum of source-NIP-receiver rays >*/
 {
 
 	float currentRayAngle;
-	int i, is, ir, it;
+	int i, ir, it;
 	float p[2], t, nrdeg;
-	int nt=5000, nr=2; //TODO to correct nr
+	int nt=5000, nr=4; //TODO to correct nr
 	float dt=0.001;
 	raytrace rt;
 	float** traj; // Ray trajectory (z,x)
-	float m, h, tmis;
+	float m, h, tmis=0;
 	float xs, xr, tr, ts, *x;
 
 	x = sf_floatalloc(2);
 
-	for(is=0;is<ns;is++){
+	//for(is=0;is<ns;is++){
 
-		x[0]=s[is][0];
-		x[1]=s[is][1];
+		x[0]=s[0];
+		x[1]=s[1];
 		nrdeg = a[is]; // TODO is in degree?
 		//sf_warning("=> sx=%f sy=%f sa=%f",x[1],x[0],nrdeg);
 
@@ -125,7 +125,7 @@ float calculateTimeMissfit(float** s, /* NIP sources matrix */
 					t = abs(nt)*dt;
 					nt += 1000;
 				}else{
-					sf_warning("=> x=%f y=%f t=%f",s[is][1],s[is][0],t);
+					sf_warning("=> x=%f y=%f t=%f",s[1],s[0],t);
 					sf_error("Bad angle, ray get to the model side/bottom");
 				}
 
@@ -133,8 +133,8 @@ float calculateTimeMissfit(float** s, /* NIP sources matrix */
 				raytrace_close(rt);
 				free(traj);
 
-				x[0] = s[is][0];
-				x[1] = s[is][1];
+				x[0] = s[0];
+				x[1] = s[1];
 			} /* Loop over source-NIP-receiver rays */
 
 			m = (xr+xs)/2.;
@@ -144,8 +144,8 @@ float calculateTimeMissfit(float** s, /* NIP sources matrix */
 			//sf_warning("=> tc=%f t=%f tmis=%f dtmis=%f\n",t,ts+tr,ts+tr-t,tmis);
 
 		} /* Loop over reflection rays */
-	} /* Loop over NIP sources */
+	//} /* Loop over NIP sources */
 
-	tmis = (tmis*tmis)/(2*ns);
+	tmis = (tmis*tmis)/(2*nr);
 	return tmis;
 }

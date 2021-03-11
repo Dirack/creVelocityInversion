@@ -8,8 +8,8 @@ Trace rays from NIP sources to acquisition surface in order to get traveltime cu
 #include <rsf.h>
 #include "tomography.h"
 #include "vfsacrsnh_lib.h"
-#define MAX_ITERATIONS 20
-#define temp0 1
+#define MAX_ITERATIONS 50
+#define temp0 10
 #define c0 0.01
 
 int main(int argc, char* argv[])
@@ -19,7 +19,7 @@ int main(int argc, char* argv[])
 	float d[2]; // Velocity grid sampling d[0]=d1, d[1]=d2
 	float o[2]; // Velocity grid origin o[0]=o1, o[1]=o2
 	float** s; // NIP source position (z,x)
-	float** cnew;
+	float* cnew;
 	float** ots;
 	float tmis0=100, otmis=0, deltaE, Em0=0, PM, temp=1, u=0;
 	int ndim; // n1 dimension in shotsfile, should be equal 2
@@ -35,6 +35,7 @@ int main(int argc, char* argv[])
 	int q;
 	float tmis; // data time misfit value
 	float *m0, *t0, *RNIP, *BETA;
+	float x[2];
 	sf_file out, shots, vel, angles, pots, m0s, t0s, rnips, betas;
 
 	sf_init(argc,argv);
@@ -68,7 +69,7 @@ int main(int argc, char* argv[])
 	if(!sf_histint(shots,"n2",&nshot)) sf_error("No n2= in shotfile");
 	s = sf_floatalloc2(ndim,nshot);
 	sf_floatread(s[0],ndim*nshot,shots);
-	cnew = sf_floatalloc2(ndim,nshot);
+	cnew = sf_floatalloc(ndim);
 	ots = sf_floatalloc2(ndim,nshot);
 	sf_fileclose(shots);
 
@@ -114,56 +115,64 @@ int main(int argc, char* argv[])
 	sf_putint(timeCurve,"n1",2);
 	sf_putint(timeCurve,"n2",ns);*/
 
-	for (q=0; q <MAX_ITERATIONS; q++){
+	for(is=0; is<ns; is++){
+
+		x[0]=s[is][0];
+		x[1]=s[is][1];
+
+		for (q=0; q <MAX_ITERATIONS; q++){
+				
+			/* calculate VFSA temperature for this iteration */
+			temp=getVfsaIterationTemperature(q,c0,temp0);
+							
+			/* parameter disturbance */
+			disturbParameters(temp,cnew,x,1);
+
+			tmis=0;
+		
+			/* Calculate time missfit through forward modeling */		
+			tmis=calculateTimeMissfit(cnew,v0,t0,m0,RNIP,BETA,n,o,d,slow,a,is);
+
+			if(fabs(tmis) < fabs(tmis0) ){
+				otmis = fabs(tmis);
+				/* optimized parameters matrix */
+				//for(is=0;is<ns;is++){
+					ots[is][0]=cnew[0];
+					ots[is][1]=cnew[1];
+				//}
+
+				tmis0 = fabs(tmis);			
+			}
+
+			/* VFSA parameters update condition */
+			deltaE = -fabs(tmis) - Em0;
 			
-		/* calculate VFSA temperature for this iteration */
-		temp=getVfsaIterationTemperature(q,c0,temp0);
-						
-		/* parameter disturbance */
-		disturbParameters(temp,cnew,s,ns);
-											
-		tmis=0;
-	
-		/* Calculate time missfit through forward modeling */		
-		tmis=calculateTimeMissfit(cnew,v0,t0,m0,RNIP,BETA,n,o,d,slow,a,ns);
-
-		if(fabs(tmis) < fabs(tmis0) ){
-			otmis = fabs(tmis);
-			/* optimized parameters matrix */
-			for(is=0;is<ns;is++){
-				ots[is][0]=cnew[is][0];
-				ots[is][1]=cnew[is][1];
-			}
-
-			tmis0 = fabs(tmis);			
-		}
-
-		/* VFSA parameters update condition */
-		deltaE = -fabs(tmis) - Em0;
-		
-		/* Metrópolis criteria */
-		PM = expf(-deltaE/temp);
-		
-		if (deltaE<=0){
-			for(is=0;is<ns;is++){
-				s[is][0]=cnew[is][0];
-				s[is][1]=cnew[is][1];
-			}
-			Em0 = -fabs(tmis);
-		} else {
-			u=getRandomNumberBetween0and1();
-			if (PM > u){
-				for(is=0;is<ns;is++){
-					s[is][0]=cnew[is][0];
-					s[is][1]=cnew[is][1];
-				}
+			/* Metrópolis criteria */
+			PM = expf(-deltaE/temp);
+			
+			if (deltaE<=0){
+				//for(is=0;is<ns;is++){
+					s[is][0]=cnew[0];
+					s[is][1]=cnew[1];
+				//}
 				Em0 = -fabs(tmis);
+			} else {
+				u=getRandomNumberBetween0and1();
+				if (PM > u){
+					//for(is=0;is<ns;is++){
+						s[is][0]=cnew[0];
+						s[is][1]=cnew[1];
+					//}
+					Em0 = -fabs(tmis);
+				}	
 			}	
-		}	
-	
-	sf_warning("%d/%d (%f)",q+1,MAX_ITERATIONS,otmis);	
-	} /* loop over iterations */
+		
+		//sf_warning("%d/%d (%f)",q+1,MAX_ITERATIONS,otmis);	
+		} /* loop over iterations */
 
+		sf_warning("%d/%d (%f)",is+1,ns,otmis);	
+		tmis0=100;
+	} /* loop over nipsources */
 	sf_putint(out,"n1",ndim);
 	sf_putint(out,"n2",ns);
 	sf_putfloat(out,"d1",1);

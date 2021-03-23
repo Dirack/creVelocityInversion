@@ -9,7 +9,7 @@
 # 
 # Version 1.0
 # 
-# Programer: Rodolfo A C Neves (Dirack) 06/03/2021
+# Programer: Rodolfo A C Neves (Dirack) 10/03/2021
 # 
 # Email: rodolfo_profissional@hotmail.com
 # 
@@ -18,5 +18,7 @@
 from rsf.proj import *
 
 Flow('nipsources.txt','nipsources','disfil col=2 format="%g " number=n')
+
+Flow('result.txt','tCoordinates','disfil col=2 format="%g " number=n')
 
 Flow('surfsources.txt','m0s','disfil col=1 format="%g " number=n')

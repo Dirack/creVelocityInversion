@@ -27,6 +27,16 @@ for line in f:
 
 f.close()
 
+xx=[]
+yy=[]
+f =  open("result.txt","r")
+for line in f:
+	ys,xs = line.split()
+	xx.append(float(xs))
+	yy.append(float(ys))
+
+f.close()
+
 z=[]
 f = open("surfsources.txt","r")
 for line in f:
@@ -36,13 +46,24 @@ f.close()
 
 z0 = [0]*len(z)
 
-m=[]
-m0=[]
+m1=[]
+m01=[]
 i=0
-f = open("modelin.txt","r")
+f = open("modelin1.txt","r")
 for line in f:
-	m.append(float(line))
-	m0.append(0.01*i)
+	m1.append(float(line))
+	m01.append(0.01*i)
+	i=i+1
+
+f.close()
+
+m2=[]
+m02=[]
+i=0
+f = open("modelin2.txt","r")
+for line in f:
+	m2.append(float(line))
+	m02.append(0.01*i)
 	i=i+1
 
 f.close()
@@ -50,6 +71,8 @@ f.close()
 plt.xlim(0, 6)
 plt.ylim(3,0)
 plt.plot(list(x),list(y),'*')
+plt.plot(list(xx),list(yy),'.')
 plt.plot(list(z),list(z0),'v')
-plt.plot(list(m0),list(m),'-')
+plt.plot(list(m01),list(m1),'-')
+plt.plot(list(m02),list(m2),'-')
 plt.show()

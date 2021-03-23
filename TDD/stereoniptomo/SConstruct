@@ -18,14 +18,14 @@
 
 from rsf.proj import *
 
-# create a model
-amp=1
-rad=1
+ns = int(ARGUMENTS.get('ns',1))
 
 # Constant velocity model for test
 Flow('model',None,
      '''
-     spike n1=301 d1=0.01 o1=0 n2=1001 d2=0.01 o2=0 mag=1.508 |
+     spike n1=301 d1=0.02 o1=0 n2=1001 d2=0.01 o2=0 mag=1.508 |
+     math output="x1*0.05+input" |
+     smooth |
      put label1=Depth unit1=km label2=Position unit2=km
      ''' )
 
@@ -33,7 +33,7 @@ Flow('model',None,
 Plot('model','model','grey color=j scalebar=y label1=Depth unit1=km label2=Position unit2=km barlabel=Velocity barunit=km/s barreverse=y title="Constant Velocity Model" allpos=y')
 
 # Generate shotsfile and anglefile for NIP sources
-Flow('s2',None,'spike n1=26 d1=1 o1=0 n2=1 o2=1 d2=0 mag=0')
+Flow('s2',None,'spike n1=%d d1=1 o1=0 n2=1 o2=1 d2=0 mag=0'%(ns))
 
 Flow('shotsfile',['s2','m0s'],'rcat ${SOURCES[1]} axis=2 | transp')
 
@@ -49,8 +49,8 @@ Flow(['ray','nipangles'],['model','shotsfile','anglefile','t0s'],
         ''')
 
 # Rotate ray angles in NIP sources positions in 180 degrees
-Flow('angles','nipangles','math output="input-180" | put n1=26 d1=1 o1=1')
-Flow('nipsources','ray','dd type=float | put n1=2 n2=26')
+Flow('angles','nipangles','math output="input-180" | put n1=%d d1=1 o1=1'%(ns))
+Flow('nipsources','ray','dd type=float | put n1=2 n2=%d'%(ns))
 
 # forward modeling
 # do a ray-tracing from NIP sources to acquisition surface and measure traveltime

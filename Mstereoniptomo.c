@@ -8,9 +8,9 @@ Trace rays from NIP sources to acquisition surface in order to get traveltime cu
 #include <rsf.h>
 #include "tomography.h"
 #include "vfsacrsnh_lib.h"
-#define MAX_ITERATIONS 50
-#define temp0 10
-#define c0 0.01
+#define MAX_ITERATIONS 100
+#define temp0 5
+#define c0 0.1
 
 int main(int argc, char* argv[])
 {
@@ -36,13 +36,14 @@ int main(int argc, char* argv[])
 	float tmis; // data time misfit value
 	float *m0, *t0, *RNIP, *BETA;
 	float x[2];
-	sf_file out, shots, vel, angles, pots, m0s, t0s, rnips, betas;
+	sf_file out, shots, vel, velinv, angles, m0s, t0s, rnips, betas;
 
 	sf_init(argc,argv);
 
 	shots = sf_input("shotsfile");
 	vel = sf_input("in");
 	out = sf_output("out");
+	velinv = sf_output("velinv");
 	angles = sf_input("anglefile");
 	m0s = sf_input("m0s");
 	t0s = sf_input("t0s");
@@ -173,6 +174,7 @@ int main(int argc, char* argv[])
 		sf_warning("%d/%d (%f)",is+1,ns,otmis);	
 		tmis0=100;
 	} /* loop over nipsources */
+
 	sf_putint(out,"n1",ndim);
 	sf_putint(out,"n2",ns);
 	sf_putfloat(out,"d1",1);
@@ -180,6 +182,14 @@ int main(int argc, char* argv[])
 	sf_putfloat(out,"d2",1);
 	sf_putfloat(out,"o2",0);
 	sf_floatwrite(ots[0],ndim*ns,out);
+
+	sf_putint(velinv,"n1",n[0]);
+	sf_putint(velinv,"n2",n[1]);
+	sf_putfloat(velinv,"d1",d[0]);
+	sf_putfloat(velinv,"d2",d[1]);
+	sf_putfloat(velinv,"o1",o[0]);
+	sf_putfloat(velinv,"o2",o[1]);
+	sf_floatwrite(slow,nm,velinv);
 
 	/* TODO */
 	//updatevelmodel(x,slow,nm,dmis,i);

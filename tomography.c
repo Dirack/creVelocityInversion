@@ -76,7 +76,7 @@ float calculateTimeMissfit(float* s, /* NIP sources matrix */
 	float currentRayAngle;
 	int i, ir, it;
 	float p[2], t, nrdeg;
-	int nt=5000, nr=4; //TODO to correct nr
+	int nt=5000, nr=5; //TODO to correct nr
 	float dt=0.001;
 	raytrace rt;
 	float** traj; // Ray trajectory (z,x)
@@ -146,6 +146,6 @@ float calculateTimeMissfit(float* s, /* NIP sources matrix */
 		} /* Loop over reflection rays */
 	//} /* Loop over NIP sources */
 
-	tmis = (tmis*tmis)/(2*nr);
+	//tmis = 100*(tmis*tmis)/(nr);
 	return tmis;
 }

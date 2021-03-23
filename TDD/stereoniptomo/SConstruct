@@ -54,10 +54,10 @@ Flow('nipsources','ray','dd type=float | put n1=2 n2=%d'%(ns))
 
 # forward modeling
 # do a ray-tracing from NIP sources to acquisition surface and measure traveltime
-Flow(['tCoordinates','xCoordinates'],
+Flow(['tCoordinates','velinv'],
         ['model','nipsources','angles','t0s','m0s','rnips','betas'],
         '''
-        stereoniptomo shotsfile=${SOURCES[1]} anglefile=${SOURCES[2]} t0s=${SOURCES[3]} m0s=${SOURCES[4]} rnips=${SOURCES[5]} betas=${SOURCES[6]} x=${TARGETS[1]} v0=1.508
+        stereoniptomo shotsfile=${SOURCES[1]} anglefile=${SOURCES[2]} t0s=${SOURCES[3]} m0s=${SOURCES[4]} rnips=${SOURCES[5]} betas=${SOURCES[6]} velinv=${TARGETS[1]} v0=1.508
         ''')
 
 End()

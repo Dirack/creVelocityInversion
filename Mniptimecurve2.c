@@ -1,4 +1,4 @@
-/* NIP Point source modeling ray tracer 
+/* New version of NIP Point source modeling ray tracer 
 
 Trace rays from NIP sources to acquisition surface in order to get traveltime curves used in NIP tomography.
 
@@ -12,7 +12,16 @@ Trace rays from NIP sources to acquisition surface in order to get traveltime cu
 
 #define DANGLE 15.0
 #define INITIAL_ANGLE 45.0
+#define DSLOW 0.04
 
+void updatevelmodel(int nm, float* slow){
+
+	int im;
+
+	for(im=0;im<nm;im++){
+		slow[im] -= DSLOW;
+	}
+}
 int main(int argc, char* argv[])
 {
 	bool verb; // Verbose parameter
@@ -30,14 +39,20 @@ int main(int argc, char* argv[])
 	int im; // loop counter
 	float v0; // Velocity
 	float dt=0.001; // ray time sampling
-	int nt=3000; // Numer of time samples for each ray
+	int nt=1000; // Numer of time samples for each ray
 	int ns; // Number of NIP sources
 	int it,ir,is; // loop counters
 	float** traj; // Ray trajectory (z,x)
 	float x[2]; // Ray initial position
 	float p[2]; // Ray initial slowness vector
 	float currentRayAngle; // Ray initial angle
-	sf_file shots, vel, angles, timeCurve,xCurve;
+	int ntd; // number of time samples in the data
+	int nxd; // number of x samples in the data
+	float* td; // t coordinate of the data
+	float* xd; // x coordinate of the data
+	float* tmis; // data misfit t vector
+	float* xmis; // data misfit x vector
+	sf_file shots, vel, angles, timeCurve, xCurve, xdata, tdata;
 	raytrace rt;
 
 	sf_init(argc,argv);
@@ -47,6 +62,8 @@ int main(int argc, char* argv[])
 	timeCurve = sf_output("out");
 	xCurve = sf_output("x");
 	angles = sf_input("anglefile");
+	tdata = sf_input("tdata");
+	xdata = sf_input("xdata");
 
 	/* Velocity model: get 2D grid parameters */
 	if(!sf_histint(vel,"n1",n)) sf_error("No n1= in input");
@@ -71,8 +88,19 @@ int main(int argc, char* argv[])
 	if(!sf_histint(angles,"n1",&ns)) sf_error("No n1= in anglefile");
 	a = sf_floatalloc(ns);
 	sf_floatread(a,ns,angles);
+	if(ns!=nshot) sf_error("n1 in anglefile should be equal to n2 in shotsfile!");
 
-
+	/* Read (t,x) true data */
+	if(!sf_histint(tdata,"n1",&ntd)) sf_error("No n1= in tdata file");
+	if(!sf_histint(xdata,"n1",&nxd)) sf_error("No n1= in xdata file");
+	if(ntd!=nxd) sf_error("n1 dimension in tdata should be equal to n1 in xdata!");
+	td = sf_floatalloc(ntd);
+	sf_floatread(td,ntd,tdata);
+	xd = sf_floatalloc(nxd);
+	sf_floatread(xd,nxd,xdata);
+	tmis = sf_floatalloc(ntd);
+	xmis = sf_floatalloc(nxd);
+	
 	/* get slowness squared */
 	nm = n[0]*n[1];
 	slow =  sf_floatalloc(nm);
@@ -135,7 +163,13 @@ int main(int argc, char* argv[])
 			/* Raytrace close */
 			raytrace_close(rt);
 			free(traj);
-		}
-	}
+
+			/* Calculate data misfit (t,x) */
+			tmis[ir] = td[ir] - t;
+			xmis[ir] = xd[ir] - x[1];
+		} /* Loop over rays */
+
+		updatevelmodel(nm,slow);
+	} /* Loop over NIP sources */
 
 }

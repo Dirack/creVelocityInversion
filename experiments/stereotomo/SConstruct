@@ -1,0 +1,66 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+# SConstruct (Python)
+# 
+# Purpose: Test sfnipmodsetup in a constan velocity model.
+# 
+# Site: https://dirack.github.io
+# 
+# Version 1.0
+# 
+# Programer: Rodolfo A C Neves (Dirack) 07/02/2021
+# 
+# Email: rodolfo_profissional@hotmail.com
+# 
+# License: GPL-3.0 <https://www.gnu.org/licenses/gpl-3.0.txt>.
+
+from rsf.proj import *
+
+# create a model
+amp=1
+rad=1
+
+# Constant velocity model for test
+Flow('model',None,
+     '''
+     spike n1=301 d1=0.01 o1=0 n2=1001 d2=0.01 o2=0 mag=1.508 |
+     put label1=Depth unit1=km label2=Position unit2=km
+     ''' )
+
+# plot the model
+Plot('model','model','grey color=j scalebar=y label1=Depth unit1=km label2=Position unit2=km barlabel=Velocity barunit=km/s barreverse=y title="Constant Velocity Model" allpos=y')
+
+Flow('s2',None,'spike n1=26 d1=1 o1=0 n2=1 o2=1 d2=0 mag=0')
+
+Flow('shotsfile',['s2','m0s'],'rcat ${SOURCES[1]} axis=2 | transp')
+
+Flow('anglefile',['beta','t0s','m0s'],
+	'''
+	getparameter t0s=${SOURCES[1]} m0s=${SOURCES[2]} beta=y
+	''')
+
+# do a ray-tracing
+Flow(['ray','nipangles'],['model','shotsfile','anglefile','t0s'],
+        '''
+        nipmodsetup shotsfile=${SOURCES[1]} anglefile=${SOURCES[2]} t0s=${SOURCES[3]} nipangles=${TARGETS[1]}
+        ''')
+
+# Rotate nipangles
+Flow('angles','nipangles','math output="input-180" | put n1=26 d1=1 o1=1')
+Flow('nipsources','ray','dd type=float | put n1=2 n2=26')
+
+# do a ray-tracing from NIP sources
+Flow(['tCoordinates','xCoordinates'],
+        ['model','nipsources','angles','t0s','m0s','rnips','betas'],
+        '''
+        stereoniptomo shotsfile=${SOURCES[1]} anglefile=${SOURCES[2]} t0s=${SOURCES[3]} m0s=${SOURCES[4]} rnips=${SOURCES[5]} betas=${SOURCES[6]} x=${TARGETS[1]} v0=1.508
+        ''')
+
+Flow('raysteste',['model','nipsources','angles'],
+	'''
+	rays2 nt=3000 dt=0.001 shotfile=${SOURCES[1]} a0=13 nr=1 escvar=n
+	''')
+
+
+End()

@@ -14,12 +14,36 @@
 #endif
 /*^*/
 
-void updatevelmodel(float* x, float* slow, int nm, float dmis,int i){
-/*< TODO update velocity model >*/
-	//float v;
-	int im;
-	for(im=0;im<nm;im++){
-		slow[im]-=0.01;
+void updatevelmodel(float* slow, /* Slowness vector */
+		    int* n, /* n[0]=n1 n2=n[1] */
+		    float* o, /* o[0]=o1 o[1]=o2 */
+		    float* d, /* d[0]=d1 d[1]=d2 */
+		    float v0, /* First velocity is the near surface velocity */
+		    int ite /* Number of the current iteration */)
+/*< Funcion to update constant velocity gradient:
+Note:
+This is a scratch of the function to update the velocity model,
+it uses a constant gradient velocity model, and update the 
+gradient in each iteration of the process.
+
+The purpose is to show that NIP sources will converge to the
+reflector interface with the "right" gradient used.
+
+TODO: Modify this function to VFSA optimization of the velocity model.
+ >*/
+{
+	int i, j;
+	float x, v;
+	float grad=(ite+1)*0.01;
+
+	for(i=0;i<n[0];i++){
+
+		x = i*d[0]+o[0];
+		v = grad*x+v0;
+
+		for(j=0;j<n[1];j++){
+			slow[j*n[0]+i]=1./(v*v);
+		}
 	}
 }
 
@@ -85,12 +109,9 @@ float calculateTimeMissfit(float* s, /* NIP sources matrix */
 
 	x = sf_floatalloc(2);
 
-	//for(is=0;is<ns;is++){
-
 		x[0]=s[0];
 		x[1]=s[1];
-		nrdeg = a[is]; // TODO is in degree?
-		//sf_warning("=> sx=%f sy=%f sa=%f",x[1],x[0],nrdeg);
+		nrdeg = a[is]; // TODO verify is in degree?
 
 		for(ir=0;ir<nr;ir++){
 
@@ -115,11 +136,9 @@ float calculateTimeMissfit(float* s, /* NIP sources matrix */
 					if(i==0){
 						ts=t;
 						xs=x[1];
-						//sf_warning("xs=%f ts=%f",xs,ts);
 					}else{ 
 						tr=t;
 						xr=x[1];
-						//sf_warning("xr=%f tr=%f",xr,tr);
 					}
 				}else if(it == 0){
 					t = abs(nt)*dt;
@@ -141,11 +160,10 @@ float calculateTimeMissfit(float* s, /* NIP sources matrix */
 			h = (xr-xs)/2.;
 			t = creTimeApproximation(h,m,v0,t0[is],m0[is],RNIP[is],BETA[is],true);
 			tmis += fabs((ts+tr)-t);
-			//sf_warning("=> tc=%f t=%f tmis=%f dtmis=%f\n",t,ts+tr,ts+tr-t,tmis);
 
 		} /* Loop over reflection rays */
-	//} /* Loop over NIP sources */
 
-	//tmis = 100*(tmis*tmis)/(nr);
+	/* TODO: Evaluate the best function to calcullate the time misfit */
+	tmis = (tmis*tmis)/(nr);
 	return tmis;
 }

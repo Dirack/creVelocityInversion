@@ -147,7 +147,7 @@ int main(int argc, char* argv[])
 				temp=getVfsaIterationTemperature(q,c0,temp0);
 								
 				/* parameter disturbance */
-				disturbParameters(temp,cnew,x,1);
+				disturbParameters(temp,cnew,x,2,0.01);
 
 				tmis=0;
 			

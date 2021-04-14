@@ -19,6 +19,6 @@ from rsf.proj import *
 
 Flow('nipsources.txt','nipsources','disfil col=2 format="%g " number=n')
 
-Flow('result.txt','tCoordinates','disfil col=2 format="%g " number=n')
+Flow('result.txt','result','disfil col=2 format="%g " number=n')
 
 Flow('surfsources.txt','m0s','disfil col=1 format="%g " number=n')

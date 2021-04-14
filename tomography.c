@@ -19,7 +19,7 @@ void updatevelmodel(float* slow, /* Slowness vector */
 		    float* o, /* o[0]=o1 o[1]=o2 */
 		    float* d, /* d[0]=d1 d[1]=d2 */
 		    float v0, /* First velocity is the near surface velocity */
-		    int ite /* Number of the current iteration */)
+		    float grad /* Velocity gradient */)
 /*< Funcion to update constant velocity gradient:
 Note:
 This is a scratch of the function to update the velocity model,
@@ -34,7 +34,6 @@ TODO: Modify this function to VFSA optimization of the velocity model.
 {
 	int i, j;
 	float x, v;
-	float grad=(ite+1)*0.01;
 
 	for(i=0;i<n[0];i++){
 
@@ -82,23 +81,29 @@ float creTimeApproximation(float h,
 	return t;
 }
 
-float calculateTimeMissfit(float* s, /* NIP sources matrix */
-			   float v0,
-			   float* t0,
-			   float* m0,
-			   float* RNIP,
-			   float* BETA,
-			   int *n, 
-			   float *o,
-			   float *d,
-			   float *slow,
-			   float *a,
-			   int is)
-/*< Return time missfit sum of source-NIP-receiver rays >*/
+float calculateTimeMissfit(float** s, /* NIP sources matrix (z,x) pairs */
+			   float v0, /* Near surface velocity */
+			   float* t0, /* Normal ray traveltime for each NIP source */
+			   float* m0, /* Central CMP for each NIP source */
+			   float* RNIP, /* RNIP parameter for each NIP source */
+			   float* BETA, /* BETA parameter for each NIP source */
+			   int *n, /* Velocity model dimension n1=n[0] n2=n[1] */
+			   float *o, /* Velocity model axis origin o1=o[0] o2=o[1] */
+			   float *d, /* Velocity model sampling d1=d[0] d2=d[1] */
+			   float *slow, /* Slowness velociy model */
+			   float *a, /* Normal ray angle for each NIP source */
+			   int ns /* Number of NIP sources */)
+/*< Return time missfit sum of source-NIP-receiver rays 
+
+Note: This function traces nr reflection rays pairs from each NIP source
+position passed though s matrix. It also calculate the difference between
+the traveltime of the traced rays with calculated traveltime using CRE
+traveltime approximation to calculate the time misfit returned by the function.
+ >*/
 {
 
 	float currentRayAngle;
-	int i, ir, it;
+	int i, ir, it, is;
 	float p[2], t, nrdeg;
 	int nt=5000, nr=5; //TODO to correct nr
 	float dt=0.001;
@@ -109,9 +114,11 @@ float calculateTimeMissfit(float* s, /* NIP sources matrix */
 
 	x = sf_floatalloc(2);
 
-		x[0]=s[0];
-		x[1]=s[1];
-		nrdeg = a[is]; // TODO verify is in degree?
+	for(is=0;is<ns;is++){
+
+		x[0]=s[is][0];
+		x[1]=s[is][1];
+		nrdeg = a[is]; // TODO verify is it in degree?
 
 		for(ir=0;ir<nr;ir++){
 
@@ -152,8 +159,8 @@ float calculateTimeMissfit(float* s, /* NIP sources matrix */
 				raytrace_close(rt);
 				free(traj);
 
-				x[0] = s[0];
-				x[1] = s[1];
+				x[0] = s[is][0];
+				x[1] = s[is][1];
 			} /* Loop over source-NIP-receiver rays */
 
 			m = (xr+xs)/2.;
@@ -163,7 +170,9 @@ float calculateTimeMissfit(float* s, /* NIP sources matrix */
 
 		} /* Loop over reflection rays */
 
+	} /* Loop over NIP sources */
+
 	/* TODO: Evaluate the best function to calcullate the time misfit */
-	tmis = (tmis*tmis)/(nr);
+	tmis = (tmis*tmis)/(nr*ns);
 	return tmis;
 }

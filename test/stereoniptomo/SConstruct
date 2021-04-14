@@ -58,4 +58,13 @@ Flow(['tCoordinates','velinv'],
         stereoniptomo shotsfile=${SOURCES[1]} anglefile=${SOURCES[2]} t0s=${SOURCES[3]} m0s=${SOURCES[4]} rnips=${SOURCES[5]} betas=${SOURCES[6]} velinv=${TARGETS[1]} v0=1.508
         ''')
 
+# NIP model setup after velocity model inversion,
+# ray-tracing from acquisition surface to NIP sources
+Flow(['ray2','nipangles2'],['velinv','shotsfile','anglefile','t0s'],
+        '''
+        nipmodsetup shotsfile=${SOURCES[1]} anglefile=${SOURCES[2]} t0s=${SOURCES[3]} nipangles=${TARGETS[1]}
+        ''')
+
+Flow('result','ray2','dd type=float | put n1=2 n2=%d'%(ns))
+
 End()

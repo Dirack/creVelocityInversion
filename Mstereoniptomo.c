@@ -20,7 +20,7 @@ int main(int argc, char* argv[])
 	float o[2]; // Velocity grid origin o[0]=o1, o[1]=o2
 	float** s; // NIP source position (z,x)
 	float* cnew;
-	float** ots;
+	float* ots;
 	float tmis0=100, otmis=0, deltaE, Em0=0, PM, temp=1, u=0;
 	int ndim; // n1 dimension in shotsfile, should be equal 2
 	int nshot; // n2 dimensions in shotsfile
@@ -32,11 +32,13 @@ int main(int argc, char* argv[])
 	float v0; // Near surface velocity
 	int ns; // Number of NIP sources
 	int is; // Loop counter for NIP sources
-	int q;
+	int q; // Loop counter for VFSA iteration
 	float tmis; // data time misfit value
 	float *m0, *t0, *RNIP, *BETA;
 	float x[2];
 	int iv, nv=10;
+	float* gv;
+	int i, j;
 	sf_file out, shots, vel, velinv, angles, m0s, t0s, rnips, betas;
 
 	sf_init(argc,argv);
@@ -71,8 +73,10 @@ int main(int argc, char* argv[])
 	if(!sf_histint(shots,"n2",&nshot)) sf_error("No n2= in shotfile");
 	s = sf_floatalloc2(ndim,nshot);
 	sf_floatread(s[0],ndim*nshot,shots);
-	cnew = sf_floatalloc(ndim);
-	ots = sf_floatalloc2(ndim,nshot);
+	cnew = sf_floatalloc(1);
+	ots = sf_floatalloc(1);
+	gv = sf_floatalloc(1);
+	gv[0]=0.01;
 	sf_fileclose(shots);
 
 	/* Anglefile: get initial emergence angle */
@@ -115,7 +119,7 @@ int main(int argc, char* argv[])
 	/* Optimized parameters */
 	sf_putint(out,"n1",ndim);
 	sf_putint(out,"n2",ns);
-	sf_putint(out,"n3",nv);
+	sf_putint(out,"n3",1);
 	sf_putfloat(out,"d1",1);
 	sf_putfloat(out,"o1",0);
 	sf_putfloat(out,"d2",1);
@@ -126,7 +130,7 @@ int main(int argc, char* argv[])
 	/* Velocity models from inversion */
 	sf_putint(velinv,"n1",n[0]);
 	sf_putint(velinv,"n2",n[1]);
-	sf_putint(velinv,"n3",nv);
+	sf_putint(velinv,"n3",1);
 	sf_putfloat(velinv,"d1",d[0]);
 	sf_putfloat(velinv,"d2",d[1]);
 	sf_putfloat(velinv,"o1",o[0]);
@@ -134,65 +138,64 @@ int main(int argc, char* argv[])
 	sf_putfloat(velinv,"d3",1);
 	sf_putfloat(velinv,"o3",0);
 
-	for(iv=0; iv<nv; iv++){
+	for (q=0; q <MAX_ITERATIONS; q++){
+	
+		/* calculate VFSA temperature for this iteration */
+		temp=getVfsaIterationTemperature(q,c0,temp0);
+						
+		/* parameter disturbance */
+		disturbParameters(temp,cnew,gv,1,0.001);
 
-		for(is=0; is<ns; is++){
+		/* Function to update velocity gradient */
+		updatevelmodel(slow, n, o, d, v0, gv[0]);
 
-			x[0]=s[is][0];
-			x[1]=s[is][1];
+		tmis=0;
+	
+		/* Calculate time missfit through forward modeling */		
+		tmis=calculateTimeMissfit(s,v0,t0,m0,RNIP,BETA,n,o,d,slow,a,nshot);
 
-			for (q=0; q <MAX_ITERATIONS; q++){
-					
-				/* calculate VFSA temperature for this iteration */
-				temp=getVfsaIterationTemperature(q,c0,temp0);
-								
-				/* parameter disturbance */
-				disturbParameters(temp,cnew,x,2,0.01);
+		if(fabs(tmis) < fabs(tmis0) ){
+			otmis = fabs(tmis);
+			/* optimized parameters matrix */
+			ots[0]=cnew[0];
+			tmis0 = fabs(tmis);			
+		}
 
-				tmis=0;
+		/* VFSA parameters update condition */
+		deltaE = -fabs(tmis) - Em0;
+		
+		/* Metrópolis criteria */
+		PM = expf(-deltaE/temp);
+		
+		if (deltaE<=0){
+			gv[0]=cnew[0];
+			Em0 = -fabs(tmis);
+		} else {
+			u=getRandomNumberBetween0and1();
+			if (PM > u){
+				gv[0]=cnew[0];
+				Em0 = -fabs(tmis);
+			}	
+		}	
 			
-				/* Calculate time missfit through forward modeling */		
-				tmis=calculateTimeMissfit(cnew,v0,t0,m0,RNIP,BETA,n,o,d,slow,a,is);
+		sf_warning("%f => %d/%d (%f)",gv[0],q,MAX_ITERATIONS,otmis);	
 
-				if(fabs(tmis) < fabs(tmis0) ){
-					otmis = fabs(tmis);
-					/* optimized parameters matrix */
-					ots[is][0]=cnew[0];
-					ots[is][1]=cnew[1];
-					tmis0 = fabs(tmis);			
-				}
+	} /* loop over iterations */
 
-				/* VFSA parameters update condition */
-				deltaE = -fabs(tmis) - Em0;
-				
-				/* Metrópolis criteria */
-				PM = expf(-deltaE/temp);
-				
-				if (deltaE<=0){
-					s[is][0]=cnew[0];
-					s[is][1]=cnew[1];
-					Em0 = -fabs(tmis);
-				} else {
-					u=getRandomNumberBetween0and1();
-					if (PM > u){
-						s[is][0]=cnew[0];
-						s[is][1]=cnew[1];
-						Em0 = -fabs(tmis);
-					}	
-				}	
-			
-			} /* loop over iterations */
+	/* Print optimal velocity gradient */
+	sf_warning("=> vgrad=%f v0=%f",ots[0],v0);	
+	
+	/* Generate optimal velocity model */
+	for(i=0;i<n[0];i++){
 
-			sf_warning("%d => %d/%d (%f)",iv,is+1,ns,otmis);	
-			tmis0=100;
-		} /* loop over nipsources */
+		v = ots[0]*(i*d[0]+o[0])+v0;
 
-		/* TODO: Function to update velocity */
- 		updatevelmodel(slow, n, o, d, v0, iv);
-
-		sf_floatwrite(ots[0],ndim*ns,out);
-
-		sf_floatwrite(slow,nm,velinv);
+		for(j=0;j<n[1];j++){
+			slow[j*n[0]+i]=v;
+		}
 	}
+	sf_floatwrite(slow,nm,velinv);
 
+	/* NIP sources position */	
+	sf_floatwrite(s,ndim*nshot,out);
 }

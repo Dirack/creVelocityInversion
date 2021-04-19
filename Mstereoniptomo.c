@@ -183,7 +183,7 @@ int main(int argc, char* argv[])
 	} /* loop over iterations */
 
 	/* Print optimal velocity gradient */
-	sf_warning("=> vgrad=%f v0=%f",ots[0],v0);	
+	sf_warning("(%f)=> vgrad=%f v0=%f",tmis0,ots[0],v0);	
 	
 	/* Generate optimal velocity model */
 	for(i=0;i<n[0];i++){

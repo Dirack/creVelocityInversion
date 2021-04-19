@@ -17,7 +17,7 @@
 
 from rsf.proj import *
 
-Flow('nipsources.txt','nipsources','disfil col=2 format="%g " number=n')
+Flow('nipsources.txt','nipsources_1','disfil col=2 format="%g " number=n')
 
 Flow('result.txt','result','disfil col=2 format="%g " number=n')
 

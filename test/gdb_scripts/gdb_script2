@@ -1,0 +1,9 @@
+# Command scripts for GNU debugger (GDB)
+#
+# You can call this script to set up the program getparameter.x
+# for debugging. Inside GDB session call it:
+# source gdb_script4
+
+cd stereoniptomo
+set args < rnip.rsf m0s=m0s.rsf t0s=t0s.rsf > rnips.rsf
+show args

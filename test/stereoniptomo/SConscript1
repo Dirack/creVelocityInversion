@@ -1,0 +1,84 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+# SConscript1 (Python)
+# 
+# Purpose: Setup input files for this test.
+# 
+# Site: https://dirack.github.io
+# 
+# Version 1.0
+# 
+# Programer: Rodolfo A C Neves (Dirack) 06/03/2021
+# 
+# Email: rodolfo_profissional@hotmail.com
+# 
+# License: GPL-3.0 <https://www.gnu.org/licenses/gpl-3.0.txt>.
+
+from rsf.proj import *
+
+np = int(ARGUMENTS.get('np',0))
+n1 = int(ARGUMENTS.get('n1',0))
+d1 = float(ARGUMENTS.get('d1',0.0))
+o1 = float(ARGUMENTS.get('o1',0.0))
+n2 = float(ARGUMENTS.get('n2',0))
+d2 = float(ARGUMENTS.get('d2',0.0))
+o2 = float(ARGUMENTS.get('o2',0.0))
+
+Flow('t0s.asc','pick.txt',
+	'''
+	./ascFormat.sh ${TARGETS} 1
+	''')
+
+Flow('t0s','t0s.asc','dd type=float form=native | put n2=1 d2=1 o2=0')
+
+Flow('m0s.asc','pick.txt',
+	'''
+	./ascFormat.sh ${TARGETS} 2
+	''')
+
+Flow('m0s','m0s.asc','dd type=float form=native | put n2=1 d2=1 o2=0')
+
+Flow('stackedSection','stackedSection.asc',
+	'''
+	dd type=float form=native |
+	put n1=%d d1=%g o1=%g label1=t0 unit1=s
+	n2=%d d2=%g o2=%g label2=m0 unit2=Km
+	'''%(n1,d1,o1,n2,d2,o2))
+
+Flow('parametersCube','parametersCube.asc',
+	'''
+	dd type=float form=native |
+	put n1=8 d1=1 o1=0 label1=parameters
+	n2=%d d2=1 o2=0 label2="(t0,m0) index" n3=1 d3=1 o3=0
+	'''%(np))
+
+Flow('rnip','parametersCube',
+	'''
+	window n1=1 f1=1 |
+	put n1=%d d1=%g o1=%g label1=t0 unit1=s
+	n2=%d d2=%g o2=%g label2=m0 unit2=Km
+	'''%(n1,d1,o1,n2,d2,o2))
+
+Flow('rnips',['rnip','t0s','m0s'],
+	'''
+ 	getparameter t0s=${SOURCES[1]} m0s=${SOURCES[2]} |
+	put n1=%d d1=%g o1=%g label1=t0 unit1=s
+	n2=%d d2=%g o2=%g label2=m0 unit2=Km
+	'''%(n1,d1,o1,n2,d2,o2))
+
+Flow('beta','parametersCube',
+	'''
+	window n1=1 f1=2 |
+	put n1=%d d1=%g o1=%g label1=t0 unit1=s
+	n2=%d d2=%g o2=%g label2=m0 unit2=Km
+	'''%(n1,d1,o1,n2,d2,o2))
+
+Flow('betas',['beta','t0s','m0s'],
+	'''
+ 	getparameter t0s=${SOURCES[1]} m0s=${SOURCES[2]} |
+	put n1=%d d1=%g o1=%g label1=t0 unit1=s
+	n2=%d d2=%g o2=%g label2=m0 unit2=Km
+	'''%(n1,d1,o1,n2,d2,o2))
+
+End()

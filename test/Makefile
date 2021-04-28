@@ -1,7 +1,6 @@
 # Makefile
 # 
 # Purpose: Run all tests with 'make'.
-# Or one test as example 'make test_diffmig'.
 # 
 # Site: https://dirack.github.io
 # 
@@ -13,23 +12,14 @@
 # 
 # License: GPL-3.0 <https://www.gnu.org/licenses/gpl-3.0.txt>.
 
-SRC = diffmig diffsimul
-DEP = $(addprefix test_, $(SRC)) 
 SRCNIPTOMO= ../Mnipmodsetup.c ../raytrace.c ../grid2.c ../atela.c
 SRCNIPMODEL= ../Mniptimecurve.c ../raytrace.c ../grid2.c ../atela.c
 SRCNIPMODEL2= ../Mniptimecurve2.c ../raytrace.c ../grid2.c ../atela.c
 SRCGETPARAM= ../Mgetparameter.c
 SRCSTEREO = ../Mstereoniptomo.c ../tomography.c ../raytrace.c ../grid2.c ../atela.c ../vfsacrsnh_lib.c
 
-all:	$(DEP) integ
-
-test_%:
-	@echo $@
-	@python -m unittest $@
-
-integ:
-	cd ../experiments/modelingAndStack/ && scons
-	cd ../experiments/algorithmVelocityInversion/ && scons
+all:
+	@echo TODO
 
 # Version of the sfnipmodsetup program for GDB (GNU debugger)
 nipmodsetup.x:	$(SRCNIPTOMO)

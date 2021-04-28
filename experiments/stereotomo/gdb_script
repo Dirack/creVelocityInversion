@@ -1,2 +1,0 @@
-set args <model.rsf shotsfile=nipsources.rsf anglefile=angles.rsf t0s=t0s.rsf m0s=m0s.rsf rnips=rnips.rsf betas=betas.rsf x=xCoordinates.rsf > testes.rsf
-show args

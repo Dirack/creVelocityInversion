@@ -19,18 +19,18 @@
 from rsf.proj import *
 
 ns = int(ARGUMENTS.get('ns',1))
+ni = int(ARGUMENTS.get('ni',5))
+model = 'model_0'
 
-# Constant gradient velocity model for test
-Flow('model',None,
+# Constant velocity model for test
+Flow(model,None,
      '''
      spike n1=301 d1=0.02 o1=0 n2=1001 d2=0.01 o2=0 mag=1.508 |
-     math output="x1*0.05+input" |
-     smooth |
      put label1=Depth unit1=km label2=Position unit2=km
      ''' )
 
 # plot the model
-Plot('model','model','grey color=j scalebar=y label1=Depth unit1=km label2=Position unit2=km barlabel=Velocity barunit=km/s barreverse=y title="Constant Velocity Model" allpos=y')
+Plot(model,model,'grey color=j scalebar=y label1=Depth unit1=km label2=Position unit2=km barlabel=Velocity barunit=km/s barreverse=y title="Constant Velocity Model" allpos=y')
 
 # Generate shotsfile and anglefile for NIP sources
 Flow('s2',None,'spike n1=%d d1=1 o1=0 n2=1 o2=1 d2=0 mag=0'%(ns))
@@ -42,22 +42,42 @@ Flow('anglefile',['beta','t0s','m0s'],
 	getparameter t0s=${SOURCES[1]} m0s=${SOURCES[2]} beta=y
 	''')
 
-# NIP model setup, ray-tracing from acquisition surface to NIP sources
-Flow(['ray','nipangles'],['model','shotsfile','anglefile','t0s'],
+for i in range(1,ni,1):
+
+	velinv = 'model_%d' % i
+	nipangles = 'nipangles_%d' % i
+	ray =  'ray_%d' % i
+	nipsources = 'nipsources_%d' % i
+	angles = 'angles_%d' % i
+	tCoordinates = 'tCoordinates_%d' % i
+
+	# NIP model setup, ray-tracing from acquisition surface to NIP sources
+	Flow([ray,nipangles],[model,'shotsfile','anglefile','t0s'],
+		'''
+		nipmodsetup shotsfile=${SOURCES[1]} anglefile=${SOURCES[2]} t0s=${SOURCES[3]} nipangles=${TARGETS[1]}
+		''')
+
+	# Rotate ray angles in NIP sources positions in 180 degrees
+	Flow(angles,nipangles,'math output="input-180" | put n1=%d d1=1 o1=1'%(ns))
+	Flow(nipsources,ray,'dd type=float | put n1=2 n2=%d'%(ns))
+
+	# forward modeling
+	# do a ray-tracing from NIP sources to acquisition surface and measure traveltime
+	Flow([tCoordinates,velinv],
+		[model,nipsources,angles,'t0s','m0s','rnips','betas'],
+		'''
+		stereoniptomo shotsfile=${SOURCES[1]} anglefile=${SOURCES[2]} t0s=${SOURCES[3]} m0s=${SOURCES[4]} rnips=${SOURCES[5]} betas=${SOURCES[6]} velinv=${TARGETS[1]} v0=1.508
+		''')
+
+	model = velinv
+
+# NIP model setup after velocity model inversion,
+# ray-tracing from acquisition surface to NIP sources
+Flow(['ray2','nipangles2'],[velinv,'shotsfile','anglefile','t0s'],
         '''
         nipmodsetup shotsfile=${SOURCES[1]} anglefile=${SOURCES[2]} t0s=${SOURCES[3]} nipangles=${TARGETS[1]}
         ''')
 
-# Rotate ray angles in NIP sources positions in 180 degrees
-Flow('angles','nipangles','math output="input-180" | put n1=%d d1=1 o1=1'%(ns))
-Flow('nipsources','ray','dd type=float | put n1=2 n2=%d'%(ns))
-
-# forward modeling
-# do a ray-tracing from NIP sources to acquisition surface and measure traveltime
-Flow(['tCoordinates','velinv'],
-        ['model','nipsources','angles','t0s','m0s','rnips','betas'],
-        '''
-        stereoniptomo shotsfile=${SOURCES[1]} anglefile=${SOURCES[2]} t0s=${SOURCES[3]} m0s=${SOURCES[4]} rnips=${SOURCES[5]} betas=${SOURCES[6]} velinv=${TARGETS[1]} v0=1.508
-        ''')
+Flow('result','ray2','dd type=float | put n1=2 n2=%d'%(ns))
 
 End()

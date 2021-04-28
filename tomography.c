@@ -14,12 +14,35 @@
 #endif
 /*^*/
 
-void updatevelmodel(float* x, float* slow, int nm, float dmis,int i){
-/*< TODO update velocity model >*/
-	//float v;
-	int im;
-	for(im=0;im<nm;im++){
-		slow[im]-=0.01;
+void updatevelmodel(float* slow, /* Slowness vector */
+		    int* n, /* n[0]=n1 n2=n[1] */
+		    float* o, /* o[0]=o1 o[1]=o2 */
+		    float* d, /* d[0]=d1 d[1]=d2 */
+		    float v0, /* First velocity is the near surface velocity */
+		    float grad /* Velocity gradient */)
+/*< Funcion to update constant velocity gradient:
+Note:
+This is a scratch of the function to update the velocity model,
+it uses a constant gradient velocity model, and update the 
+gradient in each iteration of the process.
+
+The purpose is to show that NIP sources will converge to the
+reflector interface with the "right" gradient used.
+
+TODO: Modify this function to VFSA optimization of the velocity model.
+ >*/
+{
+	int i, j;
+	float x, v;
+
+	for(i=0;i<n[0];i++){
+
+		x = i*d[0]+o[0];
+		v = grad*x+v0;
+
+		for(j=0;j<n[1];j++){
+			slow[j*n[0]+i]=1./(v*v);
+		}
 	}
 }
 
@@ -58,23 +81,29 @@ float creTimeApproximation(float h,
 	return t;
 }
 
-float calculateTimeMissfit(float* s, /* NIP sources matrix */
-			   float v0,
-			   float* t0,
-			   float* m0,
-			   float* RNIP,
-			   float* BETA,
-			   int *n, 
-			   float *o,
-			   float *d,
-			   float *slow,
-			   float *a,
-			   int is)
-/*< Return time missfit sum of source-NIP-receiver rays >*/
+float calculateTimeMissfit(float** s, /* NIP sources matrix (z,x) pairs */
+			   float v0, /* Near surface velocity */
+			   float* t0, /* Normal ray traveltime for each NIP source */
+			   float* m0, /* Central CMP for each NIP source */
+			   float* RNIP, /* RNIP parameter for each NIP source */
+			   float* BETA, /* BETA parameter for each NIP source */
+			   int *n, /* Velocity model dimension n1=n[0] n2=n[1] */
+			   float *o, /* Velocity model axis origin o1=o[0] o2=o[1] */
+			   float *d, /* Velocity model sampling d1=d[0] d2=d[1] */
+			   float *slow, /* Slowness velociy model */
+			   float *a, /* Normal ray angle for each NIP source */
+			   int ns /* Number of NIP sources */)
+/*< Return time missfit sum of source-NIP-receiver rays 
+
+Note: This function traces nr reflection rays pairs from each NIP source
+position passed though s matrix. It also calculate the difference between
+the traveltime of the traced rays with calculated traveltime using CRE
+traveltime approximation to calculate the time misfit returned by the function.
+ >*/
 {
 
 	float currentRayAngle;
-	int i, ir, it;
+	int i, ir, it, is;
 	float p[2], t, nrdeg;
 	int nt=5000, nr=5; //TODO to correct nr
 	float dt=0.001;
@@ -85,12 +114,11 @@ float calculateTimeMissfit(float* s, /* NIP sources matrix */
 
 	x = sf_floatalloc(2);
 
-	//for(is=0;is<ns;is++){
+	for(is=0;is<ns;is++){
 
-		x[0]=s[0];
-		x[1]=s[1];
-		nrdeg = a[is]; // TODO is in degree?
-		//sf_warning("=> sx=%f sy=%f sa=%f",x[1],x[0],nrdeg);
+		x[0]=s[is][0];
+		x[1]=s[is][1];
+		nrdeg = a[is]; // TODO verify is it in degree?
 
 		for(ir=0;ir<nr;ir++){
 
@@ -115,11 +143,9 @@ float calculateTimeMissfit(float* s, /* NIP sources matrix */
 					if(i==0){
 						ts=t;
 						xs=x[1];
-						//sf_warning("xs=%f ts=%f",xs,ts);
 					}else{ 
 						tr=t;
 						xr=x[1];
-						//sf_warning("xr=%f tr=%f",xr,tr);
 					}
 				}else if(it == 0){
 					t = abs(nt)*dt;
@@ -133,19 +159,20 @@ float calculateTimeMissfit(float* s, /* NIP sources matrix */
 				raytrace_close(rt);
 				free(traj);
 
-				x[0] = s[0];
-				x[1] = s[1];
+				x[0] = s[is][0];
+				x[1] = s[is][1];
 			} /* Loop over source-NIP-receiver rays */
 
 			m = (xr+xs)/2.;
 			h = (xr-xs)/2.;
 			t = creTimeApproximation(h,m,v0,t0[is],m0[is],RNIP[is],BETA[is],true);
 			tmis += fabs((ts+tr)-t);
-			//sf_warning("=> tc=%f t=%f tmis=%f dtmis=%f\n",t,ts+tr,ts+tr-t,tmis);
 
 		} /* Loop over reflection rays */
-	//} /* Loop over NIP sources */
 
-	//tmis = 100*(tmis*tmis)/(nr);
+	} /* Loop over NIP sources */
+
+	/* TODO: Evaluate the best function to calcullate the time misfit */
+	tmis = (tmis*tmis)/(nr*ns);
 	return tmis;
 }

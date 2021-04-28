@@ -7,8 +7,11 @@ in the stacked section using the program _sfipick_
 with the following command:
 
 ```sh
-~$ <stackedSection.rsf sfipick > pick.txt
+~$ make picking
 ```
+
+This command will convert the stacked section in ascii format to RSF
+format and it will run the program _sfipick_ to do iterative picking. 
 
 ### Run full experiment
 

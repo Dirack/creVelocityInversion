@@ -77,3 +77,9 @@ clean:
 	rm *.x
 
 .PHONY: clean nipmodsetup.x niptimecurve.x niptimecurve2.x getparameter.x stereoniptomo.x
+
+help:
+	@echo "Use 'make' to run unit tests and intergration test"
+	@echo "Use 'make progname.x' to generate a GDB version of progname for debug"
+	@echo "Programs available:"
+	@echo "\tgetparameter.x\n\tnipmodsetup.x\n\tniptimecurve2.x\n\tniptimecurve.x\n\tstereoniptomo.x"

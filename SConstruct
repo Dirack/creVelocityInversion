@@ -5,7 +5,7 @@ import bldutil
 # Put your name programs in progs variable 
 # without 'M' preffix and '.c' extension
 progs = '''
-nipmodsetup niptimecurve niptimecurve2 stereoniptomo getparameter
+nipmodsetup stereoniptomo getparameter
 '''
 
 try:  # distributed version

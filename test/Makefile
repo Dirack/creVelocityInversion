@@ -13,31 +13,17 @@
 # License: GPL-3.0 <https://www.gnu.org/licenses/gpl-3.0.txt>.
 
 SRCNIPTOMO= ../Mnipmodsetup.c ../raytrace.c ../grid2.c ../atela.c
-SRCNIPMODEL= ../Mniptimecurve.c ../raytrace.c ../grid2.c ../atela.c
-SRCNIPMODEL2= ../Mniptimecurve2.c ../raytrace.c ../grid2.c ../atela.c
 SRCGETPARAM= ../Mgetparameter.c
 SRCSTEREO = ../Mstereoniptomo.c ../tomography.c ../raytrace.c ../grid2.c ../atela.c ../vfsacrsnh_lib.c
 
 all:
-	@echo TODO
+	@echo "No unit and integration tests found, run 'make help' for more details" 
 
 # Version of the sfnipmodsetup program for GDB (GNU debugger)
 nipmodsetup.x:	$(SRCNIPTOMO)
 	gcc -g $^ -I$$RSFSRC/include -I.. -L$$RSFSRC/lib -o $@ -lrsf -lm
 	@echo "Program nipmodsetup.x for GDB built"
 	gdb -q --command=gdb_script1 --args $@
-
-# Version of the sfniptimecurve program for GDB (GNU debugger)
-niptimecurve.x:	$(SRCNIPMODEL)
-	gcc -g $^ -I$$RSFSRC/include -I.. -L$$RSFSRC/lib -o $@ -lrsf -lm
-	@echo "Program niptimecurve.x for GDB built"
-	gdb -q --command=gdb_script2 --args $@
-
-# Version of the sfniptimecurve2 program for GDB (GNU debugger)
-niptimecurve2.x:	$(SRCNIPMODEL2)
-	gcc -g $^ -I$$RSFSRC/include -I.. -L$$RSFSRC/lib -o $@ -lrsf -lm
-	@echo "Program niptimecurve2.x for GDB built"
-	gdb -q --command=gdb_script3 --args $@
 
 # Version of the sfgetparameter program for GDB (GNU debugger)
 getparameter.x:	setup1 $(SRCGETPARAM)
@@ -66,10 +52,10 @@ stereoniptomo.x:	setup1 $(SRCSTEREO)
 clean:
 	rm *.x
 
-.PHONY: clean nipmodsetup.x niptimecurve.x niptimecurve2.x getparameter.x stereoniptomo.x
+.PHONY: clean nipmodsetup.x getparameter.x stereoniptomo.x
 
 help:
 	@echo "Use 'make' to run unit tests and intergration test"
 	@echo "Use 'make progname.x' to generate a GDB version of progname for debug"
 	@echo "Programs available:"
-	@echo "\tgetparameter.x\n\tnipmodsetup.x\n\tniptimecurve2.x\n\tniptimecurve.x\n\tstereoniptomo.x"
+	@echo "\tgetparameter.x\n\tnipmodsetup.x\n\tstereoniptomo.x"

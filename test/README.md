@@ -8,7 +8,8 @@ Run the following command to test:
 ~$ make
 ```
 
-It will run the unit tests of diffmig and diffsimul experiments using unittest python module and it will run optimization tests to get the time of those experiments.
+It will run the unit tests and integration tests if they are available.
+Run 'make help' for more details and options.
 
 ### Generate GDB version of the programs for debug
 

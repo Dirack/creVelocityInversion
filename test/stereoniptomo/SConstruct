@@ -71,14 +71,9 @@ for i in range(1,ni,1):
 
 	model = velinv
 
-# TODO: correct this part. Use sqrt inside the program
-# sfstereoniptomo to return velocity instead of slowness
-invModel = "invModel"
-Flow(invModel,velinv,'math output="sqrt(1/input)"')
-
 # NIP model setup after velocity model inversion,
 # ray-tracing from acquisition surface to NIP sources
-Flow(['ray2','nipangles2'],[invModel,'shotsfile','anglefile','t0s'],
+Flow(['ray2','nipangles2'],[velinv,'shotsfile','anglefile','t0s'],
         '''
         nipmodsetup shotsfile=${SOURCES[1]} anglefile=${SOURCES[2]} t0s=${SOURCES[3]} nipangles=${TARGETS[1]}
         ''')

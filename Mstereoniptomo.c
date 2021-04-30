@@ -202,12 +202,17 @@ int main(int argc, char* argv[])
 			sf_warning("z=%f v=%f",sz[ip],ots[ip]);
 	}
 
-	// TODO: Use sqrt function to return velocity model
-	// instead of slowness
 	/* Generate optimal velocity model */
 	updateSplineCubicVelModel(slow, n, o, d, 4, sz, ots);
+	
+	/* Convert slowness to velocity */
+	for(im=0;im<nm;im++){
+		slow[im] = sqrt(1.0/slow[im]);
+	}
+
+	/* Write velocity model file */
 	sf_floatwrite(slow,nm,velinv);
 
-	/* NIP sources position */	
+	/* Write NIP sources position */	
 	sf_floatwrite(s[0],ndim*nshot,out);
 }

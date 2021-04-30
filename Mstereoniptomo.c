@@ -21,22 +21,30 @@ int main(int argc, char* argv[])
 	float d[2]; // Velocity grid sampling d[0]=d1, d[1]=d2
 	float o[2]; // Velocity grid origin o[0]=o1, o[1]=o2
 	float** s; // NIP source position (z,x)
-	float* cnew;
-	float* ots;
-	float tmis0=100, otmis=0, deltaE, Em0=0, PM, temp=1, u=0;
+	float* cnew; // Temporary parameters vector used in VFSA
+	float* ots; // Optimized parameters vector
+	float tmis0=100; // Best time misfit
+	float otmis=0; // Best time misfit
+	float deltaE; // Delta (Metrópolis criteria in VFSA)
+	float Em0=0; // Energy (VFSA algorithm)
+	float PM; // Metrópolis criteria
+	float temp=1; // Temperature for VFSA algorithm
+	float u=0; // Random number between 0 and 1
 	int ndim; // n1 dimension in shotsfile, should be equal 2
-	int nshot; // n2 dimensions in shotsfile
-	int nm; // Number of samples in velocity grid
-	float* a; // Normal Ray initial angle
-	float* slow; // slowness
+	int nshot; // n2 dimensions in shotsfile, number of shots
+	int nm; // Number of samples in velocity grid n1*n2
+	float* a; // Normal Ray initial angle for each NIP source
+	float* slow; // slowness model
 	int im; // loop counter
-	float v; // Velocity
+	float v; // Velocity temporary variable
 	float v0; // Near surface velocity
 	int ns; // Number of NIP sources
-	int ip; // Loop counter
 	int q; // Loop counter for VFSA iteration
 	float tmis; // data time misfit value
-	float *m0, *t0, *RNIP, *BETA;
+	float *m0; // CMP's for normal rays
+	float *t0; // t0's for normal rays
+	float *RNIP; // Rnip parameters vector
+	float *BETA; // Beta parameters vector
 	float* sz; // Depth coordinates of the spline velocity function
 	float* sv; // Velocity coordinates of the spline velocity function
 	sf_file out, shots, vel, velinv, angles, m0s, t0s, rnips, betas;
@@ -172,8 +180,8 @@ int main(int argc, char* argv[])
 		if(fabs(tmis) < fabs(tmis0) ){
 			otmis = fabs(tmis);
 			/* optimized parameters */
-			for(ip=0;ip<4;ip++)
-				ots[ip]=cnew[ip];
+			for(im=0;im<4;im++)
+				ots[im]=cnew[im];
 			tmis0 = fabs(tmis);			
 		}
 
@@ -184,14 +192,14 @@ int main(int argc, char* argv[])
 		PM = expf(-deltaE/temp);
 		
 		if (deltaE<=0){
-			for(ip=0;ip<4;ip++)
-				sv[ip]=cnew[ip];
+			for(im=0;im<4;im++)
+				sv[im]=cnew[im];
 			Em0 = -fabs(tmis);
 		} else {
 			u=getRandomNumberBetween0and1();
 			if (PM > u){
-				for(ip=0;ip<4;ip++)
-					sv[ip]=cnew[ip];
+				for(im=0;im<4;im++)
+					sv[im]=cnew[im];
 				Em0 = -fabs(tmis);
 			}	
 		}	
@@ -203,8 +211,8 @@ int main(int argc, char* argv[])
 	/* Print optimal velocity gradient */
 	if(verb){
 		sf_warning("Result: Best time misfit (%f)",tmis0);
-		for(ip=0;ip<4;ip++)
-			sf_warning("z=%f v=%f",sz[ip],ots[ip]);
+		for(im=0;im<4;im++)
+			sf_warning("z=%f v=%f",sz[im],ots[im]);
 	}
 
 	/* Generate optimal velocity model */

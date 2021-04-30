@@ -46,8 +46,10 @@ int main(int argc, char* argv[])
 	float *RNIP; // Rnip parameters vector
 	float *BETA; // Beta parameters vector
 	float* sz; // Depth coordinates of the spline velocity function
+	int nsz; // Dimension of sz vector
 	float* sv; // Velocity coordinates of the spline velocity function
-	sf_file shots, vel, velinv, angles, m0s, t0s, rnips, betas;
+	int nsv; // Dimension of sv vector
+	sf_file shots, vel, velinv, angles, m0s, t0s, rnips, betas, sz_file, sv_file;
 
 	sf_init(argc,argv);
 
@@ -59,6 +61,8 @@ int main(int argc, char* argv[])
 	t0s = sf_input("t0s");
 	rnips = sf_input("rnips");
 	betas = sf_input("betas");
+	sz_file = sf_input("sz");
+	sv_file = sf_input("sv");
 
 	/* Velocity model: get 2D grid parameters */
 	if(!sf_histint(vel,"n1",n)) sf_error("No n1= in input");
@@ -91,21 +95,18 @@ int main(int argc, char* argv[])
 	sf_floatread(s[0],ndim*nshot,shots);
 	sf_fileclose(shots);
 
-	/* VFSA parameters vectors */
-	cnew = sf_floatalloc(4);
-	ots = sf_floatalloc(4);
-
 	/* Cubic spline vectors */
-	sv = sf_floatalloc(4);
-	sz = sf_floatalloc(4);
-	sz[0]=o[0];
-	sz[1]=0.5;
-	sz[2]=1.5;
-	sz[3]=(n[0]-1)*d[0]+o[0];
-	sv[0]=v0;
-	sv[1]=v0;
-	sv[2]=v0+0.1;
-	sv[3]=v0+0.1;
+	if(!sf_histint(sz_file,"n1",&nsz)) sf_error("No n1= in sz file");
+	if(!sf_histint(sv_file,"n1",&nsv)) sf_error("No n1= in sv file");
+	if(nsz!=nsv) sf_error("n1 should be equal in sz and sv files");
+	sv = sf_floatalloc(nsz);
+	sz = sf_floatalloc(nsv);
+	sf_floatread(sz,nsz,sz_file);
+	sf_floatread(sv,nsv,sv_file);
+
+	/* VFSA parameters vectors */
+	cnew = sf_floatalloc(nsz);
+	ots = sf_floatalloc(nsz);
 
 	/* Anglefile: get initial emergence angle */
 	if(!sf_histint(angles,"n1",&ns)) sf_error("No n1= in anglefile");
@@ -144,6 +145,8 @@ int main(int argc, char* argv[])
 		sf_warning("n2=%d",nshot);
 		sf_warning("Input file (anglefile)");
 		sf_warning("n1=%d",ns);
+		sf_warning("Input file (sz and sv)");
+		sf_warning("nz=%d nv=%d",nsz,nsv);
 	}
 
 	/* Velocity model from inversion */
@@ -164,10 +167,10 @@ int main(int argc, char* argv[])
 		temp=getVfsaIterationTemperature(q,c0,temp0);
 						
 		/* parameter disturbance */
-		disturbParameters(temp,cnew,sv,4,0.001);
+		disturbParameters(temp,cnew,sv,nsz,0.001);
 
 		/* Function to update velocity model */
-		updateSplineCubicVelModel(slow, n, o, d, 4, sz, cnew);
+		updateSplineCubicVelModel(slow, n, o, d, nsz, sz, cnew);
 
 		tmis=0;
 	
@@ -213,7 +216,7 @@ int main(int argc, char* argv[])
 	}
 
 	/* Generate optimal velocity model */
-	updateSplineCubicVelModel(slow, n, o, d, 4, sz, ots);
+	updateSplineCubicVelModel(slow, n, o, d, nsz, sz, ots);
 	
 	/* Convert slowness to velocity */
 	for(im=0;im<nm;im++){

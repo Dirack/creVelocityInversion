@@ -1,6 +1,8 @@
-/* Ray tracer based on stereotomography strategy
+/* VFSA velocity inversion based on stereotomography and NIP tomography strategies
 
-Trace rays from NIP sources to acquisition surface in order to get traveltime curves used in NIP tomography.
+The initial velocity model and NIP sources position used in this program is set up using sfnipmodsetup. This program does the forward modelling by ray tracying from NIP sources to surface and gets reflection traveltime.
+
+The time misfit is calculated by the difference between the reflection traveltime obtained in the forward modelling and the traveltime calculated by CRE traveltime approximation formula for RNIP and BETA parameters given. This time misfit is used as a convergence criteria for VFSA global optimization algorithm to obtain optimized velocity model.
 
 */
 
@@ -60,12 +62,12 @@ int main(int argc, char* argv[])
 	if(!sf_histfloat(vel,"o2",o+1)) o[1]=0.;
 	
 	if(!sf_getbool("verb",&verb)) verb=true;
-	/* verbose */
+	/* verbose parameter (y/n) */
 
 	if(!sf_getfloat("v0",&v0)) v0=1.5;
 	/* Near surface velocity (Km/s) */
 
-	/* Shotsfile: get m0 shot points */
+	/* Shotsfile: get shot points */
 	if(!sf_histint(shots,"n1",&ndim) || 2 != ndim)
 		sf_error("Must have n1=2 in shotsfile");
 	if(!sf_histint(shots,"n2",&nshot)) sf_error("No n2= in shotfile");
@@ -116,6 +118,8 @@ int main(int argc, char* argv[])
 	}
 
 	if(verb){
+		sf_warning("Command line Parameters");
+		sf_warning("v0=%f",v0);
 		sf_warning("Input file (Velocity model)");
 		sf_warning("n1=%d d1=%f o1=%f",*n,*d,*o);
 		sf_warning("n2=%d d2=%f o2=%f",*(n+1),*(d+1),*(o+1));
@@ -126,7 +130,7 @@ int main(int argc, char* argv[])
 		sf_warning("n1=%d",ns);
 	}
 
-	/* Optimized parameters */
+	/* NIP sources file */
 	sf_putint(out,"n1",ndim);
 	sf_putint(out,"n2",ns);
 	sf_putint(out,"n3",1);
@@ -137,7 +141,7 @@ int main(int argc, char* argv[])
 	sf_putfloat(out,"d3",1);
 	sf_putfloat(out,"o3",0);
 
-	/* Velocity models from inversion */
+	/* Velocity model from inversion */
 	sf_putint(velinv,"n1",n[0]);
 	sf_putint(velinv,"n2",n[1]);
 	sf_putint(velinv,"n3",1);
@@ -148,6 +152,7 @@ int main(int argc, char* argv[])
 	sf_putfloat(velinv,"d3",1);
 	sf_putfloat(velinv,"o3",0);
 
+	/* Very Fast Simulated Annealing (VFSA) algorithm */
 	for (q=0; q <MAX_ITERATIONS; q++){
 	
 		/* calculate VFSA temperature for this iteration */
@@ -156,7 +161,7 @@ int main(int argc, char* argv[])
 		/* parameter disturbance */
 		disturbParameters(temp,cnew,sv,4,0.001);
 
-		/* Function to update velocity gradient */
+		/* Function to update velocity model */
 		updateSplineCubicVelModel(slow, n, o, d, 4, sz, cnew);
 
 		tmis=0;
@@ -166,7 +171,7 @@ int main(int argc, char* argv[])
 
 		if(fabs(tmis) < fabs(tmis0) ){
 			otmis = fabs(tmis);
-			/* optimized parameters matrix */
+			/* optimized parameters */
 			for(ip=0;ip<4;ip++)
 				ots[ip]=cnew[ip];
 			tmis0 = fabs(tmis);			

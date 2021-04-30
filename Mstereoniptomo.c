@@ -10,9 +10,6 @@ The time misfit is calculated by the difference between the reflection traveltim
 #include <rsf.h>
 #include "tomography.h"
 #include "vfsacrsnh_lib.h"
-#define MAX_ITERATIONS 10
-#define temp0 5
-#define c0 0.1
 
 int main(int argc, char* argv[])
 {
@@ -30,6 +27,9 @@ int main(int argc, char* argv[])
 	float PM; // Metrópolis criteria
 	float temp=1; // Temperature for VFSA algorithm
 	float u=0; // Random number between 0 and 1
+	int nit; // Number of VFSA iterations
+	float temp0; // Initial temperature for VFSA
+	float c0; // Damping factor for VFSA
 	int ndim; // n1 dimension in shotsfile, should be equal 2
 	int nshot; // n2 dimensions in shotsfile, number of shots
 	int nm; // Number of samples in velocity grid n1*n2
@@ -73,6 +73,15 @@ int main(int argc, char* argv[])
 
 	if(!sf_getfloat("v0",&v0)) v0=1.5;
 	/* Near surface velocity (Km/s) */
+
+	if(!sf_getint("nit",&nit)) nit=1;
+	/* Number of VFSA iterations */
+
+	if(!sf_getfloat("temp0",&temp0)) temp0=5;
+	/* Initial temperature for VFSA algorithm */
+
+	if(!sf_getfloat("c0",&c0)) c0=0.1;
+	/* Damping factor for VFSA algorithm */
 
 	/* Shotsfile: get shot points */
 	if(!sf_histint(shots,"n1",&ndim) || 2 != ndim)
@@ -126,7 +135,7 @@ int main(int argc, char* argv[])
 
 	if(verb){
 		sf_warning("Command line Parameters");
-		sf_warning("v0=%f",v0);
+		sf_warning("v0=%f nit=%d temp0=%f c0=%f",v0,nit,temp0,c0);
 		sf_warning("Input file (Velocity model)");
 		sf_warning("n1=%d d1=%f o1=%f",*n,*d,*o);
 		sf_warning("n2=%d d2=%f o2=%f",*(n+1),*(d+1),*(o+1));
@@ -149,7 +158,7 @@ int main(int argc, char* argv[])
 	sf_putfloat(velinv,"o3",0);
 
 	/* Very Fast Simulated Annealing (VFSA) algorithm */
-	for (q=0; q <MAX_ITERATIONS; q++){
+	for (q=0; q<nit; q++){
 	
 		/* calculate VFSA temperature for this iteration */
 		temp=getVfsaIterationTemperature(q,c0,temp0);
@@ -192,7 +201,7 @@ int main(int argc, char* argv[])
 			}	
 		}	
 			
-		sf_warning("%d/%d => (%f)",q,MAX_ITERATIONS,otmis);
+		sf_warning("%d/%d => (%f)",q+1,nit,otmis);
 
 	} /* loop over VFSA iterations */
 

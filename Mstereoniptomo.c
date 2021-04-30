@@ -47,14 +47,13 @@ int main(int argc, char* argv[])
 	float *BETA; // Beta parameters vector
 	float* sz; // Depth coordinates of the spline velocity function
 	float* sv; // Velocity coordinates of the spline velocity function
-	sf_file out, shots, vel, velinv, angles, m0s, t0s, rnips, betas;
+	sf_file shots, vel, velinv, angles, m0s, t0s, rnips, betas;
 
 	sf_init(argc,argv);
 
 	shots = sf_input("shotsfile");
 	vel = sf_input("in");
-	out = sf_output("out");
-	velinv = sf_output("velinv");
+	velinv = sf_output("out");
 	angles = sf_input("anglefile");
 	m0s = sf_input("m0s");
 	t0s = sf_input("t0s");
@@ -138,17 +137,6 @@ int main(int argc, char* argv[])
 		sf_warning("n1=%d",ns);
 	}
 
-	/* NIP sources file */
-	sf_putint(out,"n1",ndim);
-	sf_putint(out,"n2",ns);
-	sf_putint(out,"n3",1);
-	sf_putfloat(out,"d1",1);
-	sf_putfloat(out,"o1",0);
-	sf_putfloat(out,"d2",1);
-	sf_putfloat(out,"o2",0);
-	sf_putfloat(out,"d3",1);
-	sf_putfloat(out,"o3",0);
-
 	/* Velocity model from inversion */
 	sf_putint(velinv,"n1",n[0]);
 	sf_putint(velinv,"n2",n[1]);
@@ -225,7 +213,4 @@ int main(int argc, char* argv[])
 
 	/* Write velocity model file */
 	sf_floatwrite(slow,nm,velinv);
-
-	/* Write NIP sources position */	
-	sf_floatwrite(s[0],ndim*nshot,out);
 }

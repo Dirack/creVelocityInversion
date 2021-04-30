@@ -31,6 +31,7 @@ int main(int argc, char* argv[])
 	float v; // Velocity
 	float v0; // Near surface velocity
 	int ns; // Number of NIP sources
+	int ip; // Loop counter
 	int q; // Loop counter for VFSA iteration
 	float tmis; // data time misfit value
 	float *m0, *t0, *RNIP, *BETA;
@@ -166,10 +167,8 @@ int main(int argc, char* argv[])
 		if(fabs(tmis) < fabs(tmis0) ){
 			otmis = fabs(tmis);
 			/* optimized parameters matrix */
-			ots[0]=cnew[0];
-			ots[1]=cnew[1];
-			ots[2]=cnew[2];
-			ots[3]=cnew[3];
+			for(ip=0;ip<4;ip++)
+				ots[ip]=cnew[ip];
 			tmis0 = fabs(tmis);			
 		}
 
@@ -180,29 +179,29 @@ int main(int argc, char* argv[])
 		PM = expf(-deltaE/temp);
 		
 		if (deltaE<=0){
-			sv[0]=cnew[0];
-			sv[1]=cnew[1];
-			sv[2]=cnew[2];
-			sv[3]=cnew[3];
+			for(ip=0;ip<4;ip++)
+				sv[ip]=cnew[ip];
 			Em0 = -fabs(tmis);
 		} else {
 			u=getRandomNumberBetween0and1();
 			if (PM > u){
-				sv[0]=cnew[0];
-				sv[1]=cnew[1];
-				sv[2]=cnew[2];
-				sv[3]=cnew[3];
+				for(ip=0;ip<4;ip++)
+					sv[ip]=cnew[ip];
 				Em0 = -fabs(tmis);
 			}	
 		}	
 			
-		sf_warning("%d/%d (%f) => %f %f %f %f",q,MAX_ITERATIONS,otmis,sv[0],sv[1],sv[2],sv[3]);	
+		sf_warning("%d/%d => (%f)",q,MAX_ITERATIONS,otmis);
 
-	} /* loop over iterations */
+	} /* loop over VFSA iterations */
 
 	/* Print optimal velocity gradient */
-	sf_warning("(%f)=> %f %f %f %f",tmis0,ots[0],ots[1],ots[2],ots[3]);	
-	
+	if(verb){
+		sf_warning("Result: Best time misfit (%f)",tmis0);
+		for(ip=0;ip<4;ip++)
+			sf_warning("z=%f v=%f",sz[ip],ots[ip]);
+	}
+
 	// TODO: Use sqrt function to return velocity model
 	// instead of slowness
 	/* Generate optimal velocity model */

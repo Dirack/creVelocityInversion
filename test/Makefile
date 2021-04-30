@@ -48,7 +48,7 @@ getparameter.x:	setup1 $(SRCGETPARAM)
 
 setup1:
 	@echo "Setup input files for getparameter.x test..."
-	cd stereoniptomo && scons -f SConscript1 $(PARAM)
+	cd stereoniptomo && scons -f SConscript1 $(PARAM) && scons model.rsf
 
 # Version of the sfstereoniptomo program for GDB (GNU debugger)
 stereoniptomo.x:	setup1 $(SRCSTEREO)

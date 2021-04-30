@@ -8,7 +8,7 @@ Trace rays from NIP sources to acquisition surface in order to get traveltime cu
 #include <rsf.h>
 #include "tomography.h"
 #include "vfsacrsnh_lib.h"
-#define MAX_ITERATIONS 100
+#define MAX_ITERATIONS 10
 #define temp0 5
 #define c0 0.1
 
@@ -31,14 +31,11 @@ int main(int argc, char* argv[])
 	float v; // Velocity
 	float v0; // Near surface velocity
 	int ns; // Number of NIP sources
-	int is; // Loop counter for NIP sources
 	int q; // Loop counter for VFSA iteration
 	float tmis; // data time misfit value
 	float *m0, *t0, *RNIP, *BETA;
-	float x[2];
-	int iv, nv=10;
-	float* gv;
-	int i, j;
+	float* sz; // Depth coordinates of the spline velocity function
+	float* sv; // Velocity coordinates of the spline velocity function
 	sf_file out, shots, vel, velinv, angles, m0s, t0s, rnips, betas;
 
 	sf_init(argc,argv);
@@ -73,11 +70,23 @@ int main(int argc, char* argv[])
 	if(!sf_histint(shots,"n2",&nshot)) sf_error("No n2= in shotfile");
 	s = sf_floatalloc2(ndim,nshot);
 	sf_floatread(s[0],ndim*nshot,shots);
-	cnew = sf_floatalloc(1);
-	ots = sf_floatalloc(1);
-	gv = sf_floatalloc(1);
-	gv[0]=0.01;
 	sf_fileclose(shots);
+
+	/* VFSA parameters vectors */
+	cnew = sf_floatalloc(4);
+	ots = sf_floatalloc(4);
+
+	/* Cubic spline vectors */
+	sv = sf_floatalloc(4);
+	sz = sf_floatalloc(4);
+	sz[0]=o[0];
+	sz[1]=0.5;
+	sz[2]=1.5;
+	sz[3]=(n[0]-1)*d[0]+o[0];
+	sv[0]=v0;
+	sv[1]=v0;
+	sv[2]=v0+0.1;
+	sv[3]=v0+0.1;
 
 	/* Anglefile: get initial emergence angle */
 	if(!sf_histint(angles,"n1",&ns)) sf_error("No n1= in anglefile");
@@ -144,10 +153,10 @@ int main(int argc, char* argv[])
 		temp=getVfsaIterationTemperature(q,c0,temp0);
 						
 		/* parameter disturbance */
-		disturbParameters(temp,cnew,gv,1,0.001);
+		disturbParameters(temp,cnew,sv,4,0.001);
 
 		/* Function to update velocity gradient */
-		updatevelmodel(slow, n, o, d, v0, gv[0]);
+		updateSplineCubicVelModel(slow, n, o, d, 4, sz, cnew);
 
 		tmis=0;
 	
@@ -158,6 +167,9 @@ int main(int argc, char* argv[])
 			otmis = fabs(tmis);
 			/* optimized parameters matrix */
 			ots[0]=cnew[0];
+			ots[1]=cnew[1];
+			ots[2]=cnew[2];
+			ots[3]=cnew[3];
 			tmis0 = fabs(tmis);			
 		}
 
@@ -168,34 +180,35 @@ int main(int argc, char* argv[])
 		PM = expf(-deltaE/temp);
 		
 		if (deltaE<=0){
-			gv[0]=cnew[0];
+			sv[0]=cnew[0];
+			sv[1]=cnew[1];
+			sv[2]=cnew[2];
+			sv[3]=cnew[3];
 			Em0 = -fabs(tmis);
 		} else {
 			u=getRandomNumberBetween0and1();
 			if (PM > u){
-				gv[0]=cnew[0];
+				sv[0]=cnew[0];
+				sv[1]=cnew[1];
+				sv[2]=cnew[2];
+				sv[3]=cnew[3];
 				Em0 = -fabs(tmis);
 			}	
 		}	
 			
-		sf_warning("%f => %d/%d (%f)",gv[0],q,MAX_ITERATIONS,otmis);	
+		sf_warning("%d/%d (%f) => %f %f %f %f",q,MAX_ITERATIONS,otmis,sv[0],sv[1],sv[2],sv[3]);	
 
 	} /* loop over iterations */
 
 	/* Print optimal velocity gradient */
-	sf_warning("(%f)=> vgrad=%f v0=%f",tmis0,ots[0],v0);	
+	sf_warning("(%f)=> %f %f %f %f",tmis0,ots[0],ots[1],ots[2],ots[3]);	
 	
+	// TODO: Use sqrt function to return velocity model
+	// instead of slowness
 	/* Generate optimal velocity model */
-	for(i=0;i<n[0];i++){
-
-		v = ots[0]*(i*d[0]+o[0])+v0;
-
-		for(j=0;j<n[1];j++){
-			slow[j*n[0]+i]=v;
-		}
-	}
+	updateSplineCubicVelModel(slow, n, o, d, 4, sz, ots);
 	sf_floatwrite(slow,nm,velinv);
 
 	/* NIP sources position */	
-	sf_floatwrite(s,ndim*nshot,out);
+	sf_floatwrite(s[0],ndim*nshot,out);
 }

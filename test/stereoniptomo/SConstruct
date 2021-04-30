@@ -19,7 +19,7 @@
 from rsf.proj import *
 
 ns = int(ARGUMENTS.get('ns',1))
-ni = int(ARGUMENTS.get('ni',2)) # TODO: Make the inversion more than one time
+ni = int(ARGUMENTS.get('ni',1))
 model = 'model_0'
 
 # Constant velocity model for test
@@ -44,11 +44,13 @@ Flow('anglefile',['beta','t0s','m0s'],
 
 # Points of the velocity cubic spline function
 Flow('sz',None,'sfspike n1=4 nsp=4 mag=0.0,0.5,1.5,6 k1=1,2,3,4 l1=1,2,3,4')
-Flow('sv',None,'sfspike n1=4 nsp=4 mag=1.5,1.5,1.6,1.6 k1=1,2,3,4 l1=1,2,3,4')
+sv='vspline_0'
+Flow(sv,None,'sfspike n1=4 nsp=4 mag=1.5,1.5,1.6,1.6 k1=1,2,3,4 l1=1,2,3,4')
 
-for i in range(1,ni,1):
+for i in range(1,ni+1,1):
 
 	velinv = 'model_%d' % i
+	vspline = 'vspline_%d' % i
 	nipangles = 'nipangles_%d' % i
 	ray =  'ray_%d' % i
 	nipsources = 'nipsources_%d' % i
@@ -66,13 +68,14 @@ for i in range(1,ni,1):
 
 	# forward modeling
 	# do a ray-tracing from NIP sources to acquisition surface and measure traveltime
-	Flow(velinv,
+	Flow([velinv,vspline],
 		[model,nipsources,angles,'t0s','m0s','rnips','betas','sz','sv'],
 		'''
-		stereoniptomo shotsfile=${SOURCES[1]} anglefile=${SOURCES[2]} t0s=${SOURCES[3]} m0s=${SOURCES[4]} rnips=${SOURCES[5]} betas=${SOURCES[6]} sz=${SOURCES[7]} sv=${SOURCES[8]} v0=1.508 nit=1 c0=0.1 temp0=5
+		stereoniptomo shotsfile=${SOURCES[1]} anglefile=${SOURCES[2]} t0s=${SOURCES[3]} m0s=${SOURCES[4]} rnips=${SOURCES[5]} betas=${SOURCES[6]} sz=${SOURCES[7]} sv=${SOURCES[8]} vspline=${TARGETS[1]} v0=1.508 nit=10 c0=0.1 temp0=5
 		''')
 
 	model = velinv
+	sv = vspline
 
 # NIP model setup after velocity model inversion,
 # ray-tracing from acquisition surface to NIP sources

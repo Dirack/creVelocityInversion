@@ -49,13 +49,14 @@ int main(int argc, char* argv[])
 	int nsz; // Dimension of sz vector
 	float* sv; // Velocity coordinates of the spline velocity function
 	int nsv; // Dimension of sv vector
-	sf_file shots, vel, velinv, angles, m0s, t0s, rnips, betas, sz_file, sv_file;
+	sf_file shots, vel, velinv, angles, m0s, t0s, rnips, betas, sz_file, sv_file, vspline;
 
 	sf_init(argc,argv);
 
 	shots = sf_input("shotsfile");
 	vel = sf_input("in");
 	velinv = sf_output("out");
+	vspline = sf_output("vspline");
 	angles = sf_input("anglefile");
 	m0s = sf_input("m0s");
 	t0s = sf_input("t0s");
@@ -225,4 +226,7 @@ int main(int argc, char* argv[])
 
 	/* Write velocity model file */
 	sf_floatwrite(slow,nm,velinv);
+
+	/* Write velocity cubic spline function */
+	sf_floatwrite(ots,nsz,vspline);
 }

@@ -12,6 +12,9 @@
 # 
 # License: GPL-3.0 <https://www.gnu.org/licenses/gpl-3.0.txt>.
 
+# Number of iterations in inversion
+NI=2
+
 # model files: Stacked section and parameters cube from CRE stack
 PARCUBE=model2/parametersCube.rsf
 STKSEC=model2/stackedSection.rsf
@@ -29,7 +32,7 @@ PARAM=np=$(NP) n1=$(N1) d1=$(D1) o1=$(O1) n2=$(N2) d2=$(D2) o2=$(O2)
 # Run the experiment
 all:
 	scons -f SConscript1 $(PARAM)
-	scons ns=$(shell wc -l pick.txt | cut -d" " -f1)
+	scons ns=$(shell wc -l pick.txt | cut -d" " -f1) ni=$(NI)
 	scons -f SConscript2
 	./viewNipSources.py
 

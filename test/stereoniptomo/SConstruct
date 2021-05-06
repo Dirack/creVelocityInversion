@@ -42,10 +42,16 @@ Flow('anglefile',['beta','t0s','m0s'],
 	getparameter t0s=${SOURCES[1]} m0s=${SOURCES[2]} beta=y
 	''')
 
-# Points of the velocity cubic spline function
-Flow('sz',None,'sfspike n1=4 nsp=4 mag=0.0,0.5,1.5,6 k1=1,2,3,4 l1=1,2,3,4')
+# Points of the cubic spline velocity function
+Flow('sz',None,
+	'''
+	sfspike n1=4 nsp=4 mag=0.0,0.5,2.5,6 k1=1,2,3,4 l1=1,2,3,4
+	''')
 sv='vspline_0'
-Flow(sv,None,'sfspike n1=4 nsp=4 mag=1.5,1.5,1.6,1.6 k1=1,2,3,4 l1=1,2,3,4')
+Flow(sv,None,
+	'''
+	sfspike n1=4 nsp=4 mag=1.5,1.5,1.6,1.6, k1=1,2,3,4 l1=1,2,3,4
+	''')
 
 for i in range(1,ni+1,1):
 
@@ -69,7 +75,7 @@ for i in range(1,ni+1,1):
 	# forward modeling
 	# do a ray-tracing from NIP sources to acquisition surface and measure traveltime
 	Flow([velinv,vspline],
-		[model,nipsources,angles,'t0s','m0s','rnips','betas','sz','sv'],
+		[model,nipsources,angles,'t0s','m0s','rnips','betas','sz',sv],
 		'''
 		stereoniptomo shotsfile=${SOURCES[1]} anglefile=${SOURCES[2]} t0s=${SOURCES[3]} m0s=${SOURCES[4]} rnips=${SOURCES[5]} betas=${SOURCES[6]} sz=${SOURCES[7]} sv=${SOURCES[8]} vspline=${TARGETS[1]} v0=1.508 nit=10 c0=0.1 temp0=5
 		''')

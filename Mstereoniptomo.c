@@ -161,6 +161,10 @@ int main(int argc, char* argv[])
 	sf_putfloat(velinv,"d3",1);
 	sf_putfloat(velinv,"o3",0);
 
+	/* cubic spline velocity function */
+	sf_putint(vspline,"n1",nsz);
+	sf_putint(vspline,"n2",1);
+
 	/* Very Fast Simulated Annealing (VFSA) algorithm */
 	for (q=0; q<nit; q++){
 	

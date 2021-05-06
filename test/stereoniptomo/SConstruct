@@ -43,15 +43,27 @@ Flow('anglefile',['beta','t0s','m0s'],
 	''')
 
 # Points of the cubic spline velocity function
+xx=['0.0','0.5','2.5','6']
+vx=['1.5','1.5','1.6','1.6']
+
+nv=len(xx)
+sxx=','.join(xx)
+svx=','.join(vx)
+k1=list(range(1,nv+1))
+k1=list(map(str,k1))
+l1=list(range(1,nv+1))
+l1=list(map(str,l1))
+
 Flow('sz',None,
 	'''
-	sfspike n1=4 nsp=4 mag=0.0,0.5,2.5,6 k1=1,2,3,4 l1=1,2,3,4
-	''')
+	sfspike n1=%d nsp=%d mag=%s k1=%s l1=%s
+	'''%(nv,nv,sxx,','.join(k1),','.join(l1)))
+
 sv='vspline_0'
 Flow(sv,None,
 	'''
-	sfspike n1=4 nsp=4 mag=1.5,1.5,1.6,1.6, k1=1,2,3,4 l1=1,2,3,4
-	''')
+	sfspike n1=%d nsp=%d mag=%s k1=%s l1=%s
+	'''%(nv,nv,svx,','.join(k1),','.join(l1)))
 
 for i in range(1,ni+1,1):
 

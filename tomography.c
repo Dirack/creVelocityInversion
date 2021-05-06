@@ -14,6 +14,131 @@
 #endif
 /*^*/
 
+void calculateSplineCoeficients(int n, /* Vectors (x,y) dimension */
+				float* x, /* x coordinates */
+				float* y, /* y coordinates */
+				float* coef /* Spline coeficients */)
+/*< Function to calculate natural cubic spline coeficients
+
+Note: It Receives n points and two vectors x and y with n dimension.
+It returns a coeficients vector with 4 coeficients for each of the
+n-1 natural cubic splines, coef[n-1)*4].
+
+IMPORTANT: The number of points must be equal or major than 3 (n>3)
+and x vector must be in crescent order.
+
+>*/
+{
+
+	float s2[n]; // Second derivatives matrix
+	int i, ip1, ip2, im1, m; // Loop counter
+	float hb, ha, deltaa, deltab, t; // temporary variables
+	float e[n-2]; // hi's vector
+	float dp[n-2]; // main diagonal
+
+	/* Vectors dimension must be major than 3 */
+	if(n<3){
+		fprintf(stderr,"Erro, n<3\n");
+		exit(-1);
+	}
+
+	/* x vector must be in crescent order */
+	for(i=1;i<n;i++){
+		if(x[i-1]>x[i]){
+			fprintf(stderr,"Erro, vetor x deve possuir ordem crescente\n");
+			exit(-2);
+		}
+	}
+	
+	/* Simetric tridiagonal linear system build */
+	ha = x[1]-x[0]; deltaa = (y[1]-y[0])/ha; m=n-2;
+	for(i=0;i<m;i++){
+		ip1 = i+1; ip2 = i+2;
+		hb = x[ip2]-x[ip1];
+		deltab = (y[ip2]-y[ip1])/hb;
+		e[i] = hb; dp[i] = 2*(ha+hb);
+		s2[ip1] = 6*(deltab-deltaa);
+		ha=hb; deltaa=deltab;
+	}
+
+	/* Gauss elimination */
+	for(i=1;i<m;i++){
+		ip1=i+1; im1=i-1;
+		t = e[im1]/dp[im1];
+		dp[i] = dp[i]-t*e[im1];
+		s2[ip1] = s2[ip1]-t*s2[i];
+	}
+
+	/* Retroactive substitutive solution */
+	s2[m]=s2[m]/dp[m-1];
+	for(i=m-1;i>0;i--){
+		ip1=i+1; im1=i-1;
+		s2[i]=(s2[i]-e[im1]*s2[ip1])/dp[im1];
+	}
+	s2[0]=0; s2[n-1]=0;
+
+	/* Calculate spline coeficients */
+	for(i=0;i<n-1;i++){
+		ha = x[i+1]-x[i];
+		coef[0+i*4] = (s2[i+1]-s2[i])/(6*ha);
+		coef[1+i*4] = s2[i]/2;
+		coef[2+i*4] = (y[i+1]-y[i])/ha-(s2[i+1]+2*s2[i])*(ha/6);
+		coef[3+i*4] = y[i];
+	}
+}
+
+void updateSplineCubicVelModel( float* slow, /* Slowness vector */
+		    		int* n, /* n[0]=n1 n2=n[1] */
+		    		float* o, /* o[0]=o1 o[1]=o2 */
+		    		float* d, /* d[0]=d1 d[1]=d2 */
+			    	int dim, /* Dimension of (z,vz) vectors */
+				float* sz, /* Spline not Depth coordinates */
+				float* sv /* Spline not Velocity coordinates */)
+/*< Funcion to update spline cubic velocity model:
+Note:
+Make a velocity varying with depth model using the spline cubic interpolation
+for a set of points (z,vz) given. TODO
+
+ >*/
+{
+	int i, j=0, ic;
+	float z=0.0;
+	float coef[4*(dim-1)];
+	float v[n[0]];
+
+	//coef = (float*) malloc(4*(dim-1)*sizeof(float));
+	//v = (float*) malloc(n[0]*sizeof(float));
+
+	/* Calculate spline coeficients */
+	calculateSplineCoeficients(dim,sz,sv,coef);
+
+	/* Calculate velocity function */
+	for(i=1;i<dim;i++){
+		
+		ic = (i-1)*4;
+
+		while(z<=sz[i]){
+			z = (j*d[0]+o[0])-sz[i-1];
+			if(j>=n[0]) break;
+			v[j] = coef[0+ic]*z*z*z+coef[1+ic]*z*z+coef[2+ic]*z+coef[3+ic];
+			j++;
+		}
+	}
+
+	//free(coef);
+
+	/* Update slowness model */
+	for(i=0;i<n[0];i++){
+
+		for(j=0;j<n[1];j++){
+			slow[j*n[0]+i]=1./(v[i]*v[i]);
+		} /* Loop over distance */
+	} /* Loop over depth */
+
+	//free(coef);
+	//free(v);
+}
+
 void updatevelmodel(float* slow, /* Slowness vector */
 		    int* n, /* n[0]=n1 n2=n[1] */
 		    float* o, /* o[0]=o1 o[1]=o2 */
@@ -33,17 +158,17 @@ TODO: Modify this function to VFSA optimization of the velocity model.
  >*/
 {
 	int i, j;
-	float x, v;
+	float z, v;
 
 	for(i=0;i<n[0];i++){
 
-		x = i*d[0]+o[0];
-		v = grad*x+v0;
+		z = i*d[0]+o[0];
+		v = grad*z+v0;
 
 		for(j=0;j<n[1];j++){
 			slow[j*n[0]+i]=1./(v*v);
-		}
-	}
+		} /* Loop over distance */
+	} /* Loop over depth */
 }
 
 float creTimeApproximation(float h, 

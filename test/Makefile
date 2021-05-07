@@ -31,30 +31,57 @@ D2=$(shell <stereoniptomo/stackedSection.asc sfget d2 parform=n)
 O2=$(shell <stereoniptomo/stackedSection.asc sfget o2 parform=n)
 PARAM=np=$(NP) n1=$(N1) d1=$(D1) o1=$(O1) n2=$(N2) d2=$(D2) o2=$(O2)
 
-all:
-	@echo "No unit and integration tests found, run 'make help' for more details" 
+# Function to call gdb scripts
+# 1 is the number of the script
+# 2 are the parameters
+# 3 is the file to debug
+define GDB
+	gdb -q --command=gdb_scripts/gdb_script$(1) $(2) --args $(3)
+endef
+
+all:	nipmodsetup.x getparameter.x stereoniptomo.x
+	@echo "Running integration tests, run 'make help' for more details"
+	$(call GDB,1,-ex "r" -ex "q",nipmodsetup.x)
+	$(call GDB,2,-ex "r" -ex "q",getparameter.x)
+	$(call GDB,3,-ex "r" -ex "q",stereoniptomo.x)
+	
 
 # Version of the sfnipmodsetup program for GDB (GNU debugger)
+nipmodsetup:	nipmodsetup.x GDB1
+
 nipmodsetup.x:	$(SRCNIPTOMO)
-	gcc -g $^ -I$$RSFSRC/include -I.. -L$$RSFSRC/lib -o $@ -lrsf -lm
 	@echo "Program nipmodsetup.x for GDB built"
-	gdb -q --command=gdb_scripts/gdb_script1 --args $@
+	gcc -g $^ -I$$RSFSRC/include -I.. -L$$RSFSRC/lib -o $@ -lrsf -lm
+
+GDB1:
+	@echo "Running GDB script for nipmodsetup.x"
+	$(call GDB,1,,nipmodsetup.x)
 
 # Version of the sfgetparameter program for GDB (GNU debugger)
+getparameter:	getparameter.x GDB2
+
 getparameter.x:	setup1 $(SRCGETPARAM)
-	gcc -g $(SRCGETPARAM) -I$$RSFSRC/include -I.. -L$$RSFSRC/lib -o $@ -lrsf -lm
 	@echo "Program getparameter.x for GDB built"
-	gdb -q --command=gdb_scripts/gdb_script2 --args $@
+	gcc -g $(SRCGETPARAM) -I$$RSFSRC/include -I.. -L$$RSFSRC/lib -o $@ -lrsf -lm
+
+GDB2:
+	@echo "Running GDB script for getparameter.x"
+	$(call GDB,2,,getparameter.x)
 
 setup1:
 	@echo "Setup input files for getparameter.x test..."
 	cd stereoniptomo && scons -f SConscript1 $(PARAM) && scons model.rsf && scons sz.rsf && scons vspline_0.rsf
 
 # Version of the sfstereoniptomo program for GDB (GNU debugger)
+stereoniptomo:	stereoniptomo.x GDB3
+
 stereoniptomo.x:	setup1 $(SRCSTEREO)
+	@echo "Program stereoniptomo.x for GDB built"
 	gcc -DGDB_DEBUG -g $(SRCSTEREO) -I$$RSFSRC/include -I.. -L$$RSFSRC/lib -o $@ -lrsf -lm
-	@echo "Program getparameter.x for GDB built"
-	gdb -q --command=gdb_scripts/gdb_script3 --args $@
+
+GDB3:
+	@echo "Running GDB script for stereoniptomo.x"
+	$(call GDB,3,,stereoniptomo.x)
 
 clean:
 	rm *.x
@@ -63,6 +90,6 @@ clean:
 
 help:
 	@echo "Use 'make' to run unit tests and intergration test"
-	@echo "Use 'make progname.x' to generate a GDB version of progname for debug"
+	@echo "Use 'make progname' to generate a GDB version of progname for debug"
 	@echo "Programs available:"
-	@echo "\tgetparameter.x\n\tnipmodsetup.x\n\tstereoniptomo.x"
+	@echo "\tgetparameter\n\tnipmodsetup\n\tstereoniptomo"

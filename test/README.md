@@ -17,7 +17,7 @@ To generate a GDB version of the programs.
 Run the following make command:
 
 ```sg
-~$ make progname.x
+~$ make progname
 ```
 
 The program make will generate a GDB version of the program and load the arguments using a GDB script.

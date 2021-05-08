@@ -216,7 +216,7 @@ int main(int argc, char* argv[])
 	/* Print optimal velocity gradient */
 	if(verb){
 		sf_warning("Result: Best time misfit (%f)",tmis0);
-		for(im=0;im<4;im++)
+		for(im=0;im<nsz;im++)
 			sf_warning("z=%f v=%f",sz[im],ots[im]);
 	}
 

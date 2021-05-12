@@ -185,7 +185,7 @@ int main(int argc, char* argv[])
 		if(fabs(tmis) < fabs(tmis0) ){
 			otmis = fabs(tmis);
 			/* optimized parameters */
-			for(im=0;im<4;im++)
+			for(im=0;im<nsz;im++)
 				ots[im]=cnew[im];
 			tmis0 = fabs(tmis);			
 		}
@@ -197,13 +197,13 @@ int main(int argc, char* argv[])
 		PM = expf(-deltaE/temp);
 		
 		if (deltaE<=0){
-			for(im=0;im<4;im++)
+			for(im=0;im<nsz;im++)
 				sv[im]=cnew[im];
 			Em0 = -fabs(tmis);
 		} else {
 			u=getRandomNumberBetween0and1();
 			if (PM > u){
-				for(im=0;im<4;im++)
+				for(im=0;im<nsz;im++)
 					sv[im]=cnew[im];
 				Em0 = -fabs(tmis);
 			}	

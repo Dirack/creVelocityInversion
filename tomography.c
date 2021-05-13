@@ -4,6 +4,7 @@
 #include <rsf.h>
 #include "raytrace.h"
 #include "tomography.h"
+#define N_STRIPES 5
 
 #ifndef GDB_DEBUG
 	#define DSLOW 0.04
@@ -16,8 +17,8 @@
 
 void calculateSplineCoeficients(int n, /* Vectors (x,y) dimension */
 				float* x, /* x coordinates */
-				float* y, /* y coordinates */
-				float* coef /* Spline coeficients */)
+				float** y, /* y coordinates */
+				float** coef /* Spline coeficients */)
 /*< Function to calculate natural cubic spline coeficients
 
 Note: It Receives n points and two vectors x and y with n dimension.
@@ -31,7 +32,7 @@ and x vector must be in crescent order.
 {
 
 	float s2[n]; // Second derivatives matrix
-	int i, ip1, ip2, im1, m; // Loop counter
+	int i, ip1, ip2, im1, m, k; // Loop counter
 	float hb, ha, deltaa, deltab, t; // temporary variables
 	float e[n-2]; // hi's vector
 	float dp[n-2]; // main diagonal
@@ -49,41 +50,44 @@ and x vector must be in crescent order.
 			exit(-2);
 		}
 	}
-	
-	/* Simetric tridiagonal linear system build */
-	ha = x[1]-x[0]; deltaa = (y[1]-y[0])/ha; m=n-2;
-	for(i=0;i<m;i++){
-		ip1 = i+1; ip2 = i+2;
-		hb = x[ip2]-x[ip1];
-		deltab = (y[ip2]-y[ip1])/hb;
-		e[i] = hb; dp[i] = 2*(ha+hb);
-		s2[ip1] = 6*(deltab-deltaa);
-		ha=hb; deltaa=deltab;
-	}
 
-	/* Gauss elimination */
-	for(i=1;i<m;i++){
-		ip1=i+1; im1=i-1;
-		t = e[im1]/dp[im1];
-		dp[i] = dp[i]-t*e[im1];
-		s2[ip1] = s2[ip1]-t*s2[i];
-	}
+	for(k=0;k<N_STRIPES;k++){
+		
+		/* Simetric tridiagonal linear system build */
+		ha = x[1]-x[0]; deltaa = (y[k][1]-y[k][0])/ha; m=n-2;
+		for(i=0;i<m;i++){
+			ip1 = i+1; ip2 = i+2;
+			hb = x[ip2]-x[ip1];
+			deltab = (y[k][ip2]-y[k][ip1])/hb;
+			e[i] = hb; dp[i] = 2*(ha+hb);
+			s2[ip1] = 6*(deltab-deltaa);
+			ha=hb; deltaa=deltab;
+		}
 
-	/* Retroactive substitutive solution */
-	s2[m]=s2[m]/dp[m-1];
-	for(i=m-1;i>0;i--){
-		ip1=i+1; im1=i-1;
-		s2[i]=(s2[i]-e[im1]*s2[ip1])/dp[im1];
-	}
-	s2[0]=0; s2[n-1]=0;
+		/* Gauss elimination */
+		for(i=1;i<m;i++){
+			ip1=i+1; im1=i-1;
+			t = e[im1]/dp[im1];
+			dp[i] = dp[i]-t*e[im1];
+			s2[ip1] = s2[ip1]-t*s2[i];
+		}
 
-	/* Calculate spline coeficients */
-	for(i=0;i<n-1;i++){
-		ha = x[i+1]-x[i];
-		coef[0+i*4] = (s2[i+1]-s2[i])/(6*ha);
-		coef[1+i*4] = s2[i]/2;
-		coef[2+i*4] = (y[i+1]-y[i])/ha-(s2[i+1]+2*s2[i])*(ha/6);
-		coef[3+i*4] = y[i];
+		/* Retroactive substitutive solution */
+		s2[m]=s2[m]/dp[m-1];
+		for(i=m-1;i>0;i--){
+			ip1=i+1; im1=i-1;
+			s2[i]=(s2[i]-e[im1]*s2[ip1])/dp[im1];
+		}
+		s2[0]=0; s2[n-1]=0;
+
+		/* Calculate spline coeficients */
+		for(i=0;i<n-1;i++){
+			ha = x[i+1]-x[i];
+			coef[k][0+i*4] = (s2[i+1]-s2[i])/(6*ha);
+			coef[k][1+i*4] = s2[i]/2;
+			coef[k][2+i*4] = (y[k][i+1]-y[k][i])/ha-(s2[i+1]+2*s2[i])*(ha/6);
+			coef[k][3+i*4] = y[k][i];
+		}
 	}
 }
 
@@ -93,7 +97,7 @@ void updateSplineCubicVelModel( float* slow, /* Slowness vector */
 		    		float* d, /* d[0]=d1 d[1]=d2 */
 			    	int dim, /* Dimension of (z,vz) vectors */
 				float* sz, /* Spline not Depth coordinates */
-				float* sv /* Spline not Velocity coordinates */)
+				float** sv /* Spline not Velocity coordinates */)
 /*< Funcion to update spline cubic velocity model:
 Note:
 Make a velocity varying with depth model using the spline cubic interpolation
@@ -101,42 +105,52 @@ for a set of points (z,vz) given. TODO
 
  >*/
 {
-	int i, j=0, ic;
+	int i, j=0, ic, k;
 	float z=0.0;
-	float coef[4*(dim-1)];
-	float v[n[0]];
-
-	//coef = (float*) malloc(4*(dim-1)*sizeof(float));
-	//v = (float*) malloc(n[0]*sizeof(float));
+	float coef[N_STRIPES][4*(dim-1)];
+	float v[N_STRIPES][n[0]];
+	int app, app_len=n[1]/N_STRIPES;
 
 	/* Calculate spline coeficients */
-	calculateSplineCoeficients(dim,sz,sv,coef);
+	//calculateSplineCoeficients(dim,sz,sv,coef);
 
 	/* Calculate velocity function */
-	for(i=1;i<dim;i++){
-		
-		ic = (i-1)*4;
+	for(k=0;k<N_STRIPES;k++){
 
-		while(z<=sz[i]){
-			z = (j*d[0]+o[0])-sz[i-1];
-			if(j>=n[0]) break;
-			v[j] = coef[0+ic]*z*z*z+coef[1+ic]*z*z+coef[2+ic]*z+coef[3+ic];
-			j++;
+		z = o[0];
+		j = 0;
+
+		for(i=1;i<dim;i++){
+			
+			ic = (i-1)*4;
+
+			while(z<=sz[i]){
+				z = (j*d[0]+o[0])-sz[i-1];
+				if(j>=n[0]) break;
+				v[k][j] = coef[k][0+ic]*z*z*z+coef[k][1+ic]*z*z+coef[k][2+ic]*z+coef[k][3+ic];
+				j++;
+			}
 		}
 	}
 
-	//free(coef);
-
 	/* Update slowness model */
-	for(i=0;i<n[0];i++){
+	for(k=0;k<N_STRIPES;k++){
 
-		for(j=0;j<n[1];j++){
-			slow[j*n[0]+i]=1./(v[i]*v[i]);
-		} /* Loop over distance */
-	} /* Loop over depth */
+		app = (k*app_len);
 
-	//free(coef);
-	//free(v);
+		for(i=0;i<n[0];i++){
+
+			for(j=app;j<((k+1)*app_len);j++){
+				slow[j*n[0]+i]=1./(v[k][i]*v[k][i]);
+				#ifdef GDB_DEBUG
+				sf_warning("[%d][%d][%d] %f %f ",i,j,k,v[k][i],slow[j*n[0]+i]);
+				#endif
+			} /* Loop over distance */
+		} /* Loop over depth */
+	} /* Loop over cubic spline functions */
+	#ifdef GDB_DEBUG
+	sf_error("fim");
+	#endif
 }
 
 void updatevelmodel(float* slow, /* Slowness vector */

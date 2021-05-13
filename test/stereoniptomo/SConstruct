@@ -24,7 +24,7 @@ from rsf.recipes.kimodel import multiLayerModel as mlmod
 
 ns = int(ARGUMENTS.get('ns',1)) # Number of NIP sources to forward modeling
 ni = int(ARGUMENTS.get('ni',1)) # Number of iterations in inversion loop
-nit = int(ARGUMENTS.get('nit',10)) # Number of iterations in stereoniptomo
+nit = int(ARGUMENTS.get('nit',1)) # Number of iterations in stereoniptomo
 model = 'model_0'
 
 # Original velocity model

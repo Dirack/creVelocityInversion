@@ -10,6 +10,7 @@ The time misfit is calculated by the difference between the reflection traveltim
 #include <rsf.h>
 #include "tomography.h"
 #include "vfsacrsnh_lib.h"
+#define N_STRIPES 5
 
 int main(int argc, char* argv[])
 {
@@ -35,7 +36,7 @@ int main(int argc, char* argv[])
 	int nm; // Number of samples in velocity grid n1*n2
 	float* a; // Normal Ray initial angle for each NIP source
 	float* slow; // slowness model
-	int im; // loop counter
+	int im, k, i; // loop counter
 	float v; // Velocity temporary variable
 	float v0; // Near surface velocity
 	int ns; // Number of NIP sources
@@ -49,6 +50,7 @@ int main(int argc, char* argv[])
 	int nsz; // Dimension of sz vector
 	float* sv; // Velocity coordinates of the spline velocity function
 	int nsv; // Dimension of sv vector
+	float* tmp; // Temporary vector to build cubic spline velocity matrix
 	sf_file shots, vel, velinv, angles, m0s, t0s, rnips, betas, sz_file, sv_file, vspline;
 
 	sf_init(argc,argv);
@@ -100,14 +102,25 @@ int main(int argc, char* argv[])
 	if(!sf_histint(sz_file,"n1",&nsz)) sf_error("No n1= in sz file");
 	if(!sf_histint(sv_file,"n1",&nsv)) sf_error("No n1= in sv file");
 	if(nsz!=nsv) sf_error("n1 should be equal in sz and sv files");
-	sv = sf_floatalloc(nsz);
-	sz = sf_floatalloc(nsv);
+	
+	/* Build cubic spline velocity matrix */
+	tmp = sf_floatalloc(nsv);
+	sf_floatread(tmp,nsv,sv_file);
+	sv = sf_floatalloc(N_STRIPES*nsv);
+
+	for(k=0;k<N_STRIPES;k++){
+		for(i=0;i<nsv;i++){
+			sv[(k*nsv)+i]=tmp[i];
+		}
+	}
+	free(tmp);
+
+	sz = sf_floatalloc(nsz);
 	sf_floatread(sz,nsz,sz_file);
-	sf_floatread(sv,nsv,sv_file);
 
 	/* VFSA parameters vectors */
-	cnew = sf_floatalloc(nsz);
-	ots = sf_floatalloc(nsz);
+	cnew = sf_floatalloc(N_STRIPES*nsz);
+	ots = sf_floatalloc(N_STRIPES*nsz);
 
 	/* Anglefile: get initial emergence angle */
 	if(!sf_histint(angles,"n1",&ns)) sf_error("No n1= in anglefile");
@@ -161,9 +174,9 @@ int main(int argc, char* argv[])
 	sf_putfloat(velinv,"d3",1);
 	sf_putfloat(velinv,"o3",0);
 
-	/* cubic spline velocity function */
+	/* cubic spline velocity matrix */
 	sf_putint(vspline,"n1",nsz);
-	sf_putint(vspline,"n2",1);
+	sf_putint(vspline,"n2",N_STRIPES);
 
 	/* Very Fast Simulated Annealing (VFSA) algorithm */
 	for (q=0; q<nit; q++){
@@ -172,22 +185,22 @@ int main(int argc, char* argv[])
 		temp=getVfsaIterationTemperature(q,c0,temp0);
 						
 		/* parameter disturbance */
-		disturbParameters(temp,cnew,sv,nsz,0.001);
+		disturbParameters(temp,cnew,sv,nsv*N_STRIPES,0.001);
 
 		/* Function to update velocity model */
-		updateSplineCubicVelModel(slow, n, o, d, nsz, sz, cnew);
+		//updateSplineCubicVelModel(slow, n, o, d, nsz, sz, cnew);
 
 		tmis=0;
 	
 		/* Calculate time missfit through forward modeling */		
-		tmis=calculateTimeMissfit(s,v0,t0,m0,RNIP,BETA,n,o,d,slow,a,nshot);
+		//tmis=calculateTimeMissfit(s,v0,t0,m0,RNIP,BETA,n,o,d,slow,a,nshot);
 
 		if(fabs(tmis) < fabs(tmis0) ){
 			otmis = fabs(tmis);
-			/* optimized parameters */
+			/* optimized parameters 
 			for(im=0;im<nsz;im++)
-				ots[im]=cnew[im];
-			tmis0 = fabs(tmis);			
+				ots[im]=cnew[im];*/
+			tmis0 = fabs(tmis);
 		}
 
 		/* VFSA parameters update condition */
@@ -197,14 +210,14 @@ int main(int argc, char* argv[])
 		PM = expf(-deltaE/temp);
 		
 		if (deltaE<=0){
-			for(im=0;im<nsz;im++)
-				sv[im]=cnew[im];
+			/*for(im=0;im<nsz;im++)
+				sv[im]=cnew[im];*/
 			Em0 = -fabs(tmis);
 		} else {
 			u=getRandomNumberBetween0and1();
 			if (PM > u){
-				for(im=0;im<nsz;im++)
-					sv[im]=cnew[im];
+				/*for(im=0;im<nsz;im++)
+					sv[im]=cnew[im];*/
 				Em0 = -fabs(tmis);
 			}	
 		}	
@@ -221,7 +234,7 @@ int main(int argc, char* argv[])
 	}
 
 	/* Generate optimal velocity model */
-	updateSplineCubicVelModel(slow, n, o, d, nsz, sz, ots);
+	//updateSplineCubicVelModel(slow, n, o, d, nsz, sz, ots);
 	
 	/* Convert slowness to velocity */
 	for(im=0;im<nm;im++){

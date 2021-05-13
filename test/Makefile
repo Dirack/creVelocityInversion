@@ -70,7 +70,7 @@ GDB2:
 
 setup1:
 	@echo "Setup input files for getparameter.x test..."
-	cd stereoniptomo && scons -f SConscript1 $(PARAM) && scons model.rsf && scons sz.rsf && scons vspline_0.rsf
+	cd stereoniptomo && scons -f SConscript1 $(PARAM) && scons model_0.rsf && scons sz.rsf && scons vspline_0.rsf
 
 # Version of the sfstereoniptomo program for GDB (GNU debugger)
 stereoniptomo:	stereoniptomo.x GDB3
@@ -81,7 +81,7 @@ stereoniptomo.x:	setup1 $(SRCSTEREO)
 
 GDB3:
 	@echo "Running GDB script for stereoniptomo.x"
-	$(call GDB,3,,stereoniptomo.x)
+	$(call GDB,3,-ex "b 117" -ex "r",stereoniptomo.x)
 
 clean:
 	rm *.x

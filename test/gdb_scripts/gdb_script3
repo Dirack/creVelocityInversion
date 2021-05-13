@@ -5,5 +5,5 @@
 # source gdb_script3
 
 cd stereoniptomo
-set args <model.rsf shotsfile=nipsources_1.rsf anglefile=angles_1.rsf t0s=t0s.rsf m0s=m0s.rsf rnips=rnips.rsf betas=betas.rsf sz=sz.rsf sv=vspline_0.rsf vspline=vspline_1.rsf > model_1.rsf
+set args <model_0.rsf shotsfile=nipsources_1.rsf anglefile=angles_1.rsf t0s=t0s.rsf m0s=m0s.rsf rnips=rnips.rsf betas=betas.rsf sz=sz.rsf sv=vspline_0.rsf vspline=vspline_1.rsf > model_1.rsf
 show args

@@ -10,7 +10,7 @@ The time misfit is calculated by the difference between the reflection traveltim
 #include <rsf.h>
 #include "tomography.h"
 #include "vfsacrsnh_lib.h"
-#define N_STRIPES 5
+#define N_STRIPES 20
 
 int main(int argc, char* argv[])
 {
@@ -188,18 +188,18 @@ int main(int argc, char* argv[])
 		disturbParameters(temp,cnew,sv,nsv*N_STRIPES,0.001);
 
 		/* Function to update velocity model */
-		//updateSplineCubicVelModel(slow, n, o, d, nsz, sz, cnew);
+		updateSplineCubicVelModel(slow, n, o, d, nsz, sz, cnew, N_STRIPES);
 
 		tmis=0;
 	
 		/* Calculate time missfit through forward modeling */		
-		//tmis=calculateTimeMissfit(s,v0,t0,m0,RNIP,BETA,n,o,d,slow,a,nshot);
+		tmis=calculateTimeMissfit(s,v0,t0,m0,RNIP,BETA,n,o,d,slow,a,nshot);
 
 		if(fabs(tmis) < fabs(tmis0) ){
 			otmis = fabs(tmis);
-			/* optimized parameters 
-			for(im=0;im<nsz;im++)
-				ots[im]=cnew[im];*/
+			/* optimized parameters */
+			for(im=0;im<nsz*N_STRIPES;im++)
+				ots[im]=cnew[im];
 			tmis0 = fabs(tmis);
 		}
 
@@ -210,14 +210,14 @@ int main(int argc, char* argv[])
 		PM = expf(-deltaE/temp);
 		
 		if (deltaE<=0){
-			/*for(im=0;im<nsz;im++)
-				sv[im]=cnew[im];*/
+			for(im=0;im<nsz*N_STRIPES;im++)
+				sv[im]=cnew[im];
 			Em0 = -fabs(tmis);
 		} else {
 			u=getRandomNumberBetween0and1();
 			if (PM > u){
-				/*for(im=0;im<nsz;im++)
-					sv[im]=cnew[im];*/
+				for(im=0;im<nsz*N_STRIPES;im++)
+					sv[im]=cnew[im];
 				Em0 = -fabs(tmis);
 			}	
 		}	
@@ -226,15 +226,15 @@ int main(int argc, char* argv[])
 
 	} /* loop over VFSA iterations */
 
-	/* Print optimal velocity gradient */
+	/* Print optimal velocity gradient
 	if(verb){
 		sf_warning("Result: Best time misfit (%f)",tmis0);
 		for(im=0;im<nsz;im++)
 			sf_warning("z=%f v=%f",sz[im],ots[im]);
-	}
+	}*/
 
 	/* Generate optimal velocity model */
-	//updateSplineCubicVelModel(slow, n, o, d, nsz, sz, ots);
+	updateSplineCubicVelModel(slow, n, o, d, nsz, sz, ots, N_STRIPES);
 	
 	/* Convert slowness to velocity */
 	for(im=0;im<nm;im++){
@@ -245,5 +245,5 @@ int main(int argc, char* argv[])
 	sf_floatwrite(slow,nm,velinv);
 
 	/* Write velocity cubic spline function */
-	sf_floatwrite(ots,nsz,vspline);
+	sf_floatwrite(ots,nsz*N_STRIPES,vspline);
 }

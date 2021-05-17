@@ -13,7 +13,7 @@
 # License: GPL-3.0 <https://www.gnu.org/licenses/gpl-3.0.txt>.
 
 # Number of iterations in inversion
-NI=1
+NI=10
 
 # model files: Stacked section and parameters cube from CRE stack
 PARCUBE=model2/parametersCube.rsf

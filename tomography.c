@@ -4,7 +4,6 @@
 #include <rsf.h>
 #include "raytrace.h"
 #include "tomography.h"
-#define N_STRIPES 5
 
 #ifndef GDB_DEBUG
 	#define DSLOW 0.04
@@ -17,8 +16,9 @@
 
 void calculateSplineCoeficients(int n, /* Vectors (x,y) dimension */
 				float* x, /* x coordinates */
-				float** y, /* y coordinates */
-				float** coef /* Spline coeficients */)
+				float* y, /* y coordinates */
+				float** coef, /* Spline coeficients */
+				int n_stripes)
 /*< Function to calculate natural cubic spline coeficients
 
 Note: It Receives n points and two vectors x and y with n dimension.
@@ -51,14 +51,14 @@ and x vector must be in crescent order.
 		}
 	}
 
-	for(k=0;k<N_STRIPES;k++){
+	for(k=0;k<n_stripes;k++){
 		
 		/* Simetric tridiagonal linear system build */
-		ha = x[1]-x[0]; deltaa = (y[k][1]-y[k][0])/ha; m=n-2;
+		ha = x[1]-x[0]; deltaa = (y[k*n+1]-y[k*n+0])/ha; m=n-2;
 		for(i=0;i<m;i++){
 			ip1 = i+1; ip2 = i+2;
 			hb = x[ip2]-x[ip1];
-			deltab = (y[k][ip2]-y[k][ip1])/hb;
+			deltab = (y[k*n+ip2]-y[k*n+ip1])/hb;
 			e[i] = hb; dp[i] = 2*(ha+hb);
 			s2[ip1] = 6*(deltab-deltaa);
 			ha=hb; deltaa=deltab;
@@ -85,8 +85,8 @@ and x vector must be in crescent order.
 			ha = x[i+1]-x[i];
 			coef[k][0+i*4] = (s2[i+1]-s2[i])/(6*ha);
 			coef[k][1+i*4] = s2[i]/2;
-			coef[k][2+i*4] = (y[k][i+1]-y[k][i])/ha-(s2[i+1]+2*s2[i])*(ha/6);
-			coef[k][3+i*4] = y[k][i];
+			coef[k][2+i*4] = (y[k*n+i+1]-y[k*n+i])/ha-(s2[i+1]+2*s2[i])*(ha/6);
+			coef[k][3+i*4] = y[k*n+i];
 		}
 	}
 }
@@ -97,7 +97,8 @@ void updateSplineCubicVelModel( float* slow, /* Slowness vector */
 		    		float* d, /* d[0]=d1 d[1]=d2 */
 			    	int dim, /* Dimension of (z,vz) vectors */
 				float* sz, /* Spline not Depth coordinates */
-				float** sv /* Spline not Velocity coordinates */)
+				float* sv, /* Spline not Velocity coordinates */
+				int n_stripes)
 /*< Funcion to update spline cubic velocity model:
 Note:
 Make a velocity varying with depth model using the spline cubic interpolation
@@ -107,15 +108,17 @@ for a set of points (z,vz) given. TODO
 {
 	int i, j=0, ic, k;
 	float z=0.0;
-	float coef[N_STRIPES][4*(dim-1)];
-	float v[N_STRIPES][n[0]];
-	int app, app_len=n[1]/N_STRIPES;
+	float** coef;
+	float v[n_stripes][n[0]];
+	int app, app_len=n[1]/n_stripes;
+
+	coef = sf_floatalloc2(4*(dim-1),n_stripes);
 
 	/* Calculate spline coeficients */
-	//calculateSplineCoeficients(dim,sz,sv,coef);
+	calculateSplineCoeficients(dim,sz,sv,coef,n_stripes);
 
 	/* Calculate velocity function */
-	for(k=0;k<N_STRIPES;k++){
+	for(k=0;k<n_stripes;k++){
 
 		z = o[0];
 		j = 0;
@@ -134,7 +137,7 @@ for a set of points (z,vz) given. TODO
 	}
 
 	/* Update slowness model */
-	for(k=0;k<N_STRIPES;k++){
+	for(k=0;k<n_stripes;k++){
 
 		app = (k*app_len);
 

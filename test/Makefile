@@ -81,7 +81,7 @@ stereoniptomo.x:	setup1 $(SRCSTEREO)
 
 GDB3:
 	@echo "Running GDB script for stereoniptomo.x"
-	$(call GDB,3,-ex "b 117" -ex "r",stereoniptomo.x)
+	$(call GDB,3,-ex "b 239" -ex "r",stereoniptomo.x)
 
 clean:
 	rm *.x

@@ -15,7 +15,7 @@
 
 */
 
-#define MAX 2
+#define MAX 3
 #define MIN 1.0
 #define APERTURE 0.5
 #define Rnip_MAX 4
@@ -74,12 +74,17 @@ VFSA disturb parameters step.
 
 		disturbedParameter[i] = parameter[i] + (disturbance*scale) * (APERTURE);
 
-		if (disturbedParameter[i] >= MAX || disturbedParameter[i] <= MIN) {
+		if (disturbedParameter[i] >= MAX) {
 
-			disturbedParameter[i] = (APERTURE) * getRandomNumberBetween0and1() + parameter[i];
+			disturbedParameter[i] = MAX - (APERTURE) * getRandomNumberBetween0and1();
 			
 		}
 
+		if (disturbedParameter[i] <= MIN) {
+
+			disturbedParameter[i] = (APERTURE) * getRandomNumberBetween0and1() + MIN;
+			
+		}
 	}
 }
 

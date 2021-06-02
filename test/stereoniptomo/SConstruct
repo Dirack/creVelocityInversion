@@ -51,7 +51,7 @@ mlmod(interfaces='interfaces',
 # Constant velocity model for stereoniptomo
 Flow(model,None,
      '''
-     spike n1=301 d1=0.01 o1=0 n2=1001 d2=0.01 o2=0 mag=1.508 |
+     spike n1=301 d1=0.01 o1=0 n2=1001 d2=0.01 o2=-2 mag=1.508 |
      put label1=Depth unit1=km label2=Position unit2=km
      ''' )
 
@@ -68,20 +68,44 @@ Flow('anglefile',['beta','t0s','m0s'],
 	getparameter t0s=${SOURCES[1]} m0s=${SOURCES[2]} beta=y
 	''')
 
+# First iteration to get the velocity gradient in z
+velinv = 'model_1'
+nipsources = 'nipsources_1'
+nipangles = 'nipangles_1'
+ray =  'ray_1'
+nipsources = 'nipsources_1'
+angles = 'angles_1'
+
+# NIP model setup, ray-tracing from acquisition surface to NIP sources
+Flow([ray,nipangles],[model,'shotsfile','anglefile','t0s'],
+	'''
+	nipmodsetup shotsfile=${SOURCES[1]} anglefile=${SOURCES[2]} t0s=${SOURCES[3]} nipangles=${TARGETS[1]}
+	''')
+
+# Rotate ray angles in NIP sources positions in 180 degrees
+Flow(angles,nipangles,'math output="input-180" | put n1=%d d1=1 o1=1'%(ns))
+Flow(nipsources,ray,'dd type=float | put n1=2 n2=%d'%(ns))
+
+Flow([velinv,'gz'],
+	[model,nipsources,angles,'t0s','m0s','rnips','betas'],
+	'''
+	zgradtomo shotsfile=${SOURCES[1]} anglefile=${SOURCES[2]} t0s=${SOURCES[3]} m0s=${SOURCES[4]} rnips=${SOURCES[5]} betas=${SOURCES[6]} gz=${TARGETS[1]} v0=1.508 nit=%d c0=0.1 temp0=5
+	''')
+
 # Points of the cubic spline velocity function
 Flow('sz',None,
 	'''
 	spike n1=7 d1=1 o1=0 |
-	math output="x1*1.0"
+	math output="x1*0.5"
 	''')
 
-sv='vspline_0'
-Flow(sv,'sz',
-	'''
-	math output="input*0.03+1.5"
-	''')
-
-for i in range(1,ni+1,1):
+#sv='vspline_2'
+#Flow(sv,'sz',
+#	'''
+#	math output="input*0.453+1.5"
+#	''')
+model = velinv
+for i in range(2,6,1):
 
 	velinv = 'model_%d' % i
 	vspline = 'vspline_%d' % i
@@ -103,13 +127,14 @@ for i in range(1,ni+1,1):
 	# forward modeling
 	# do a ray-tracing from NIP sources to acquisition surface and measure traveltime
 	Flow([velinv,vspline],
-		[model,nipsources,angles,'t0s','m0s','rnips','betas','sz',sv],
+		[model,nipsources,angles,'t0s','m0s','rnips','betas','sz','gz'],
 		'''
-		stereoniptomo shotsfile=${SOURCES[1]} anglefile=${SOURCES[2]} t0s=${SOURCES[3]} m0s=${SOURCES[4]} rnips=${SOURCES[5]} betas=${SOURCES[6]} sz=${SOURCES[7]} sv=${SOURCES[8]} vspline=${TARGETS[1]} v0=1.508 nit=%d c0=0.1 temp0=5
+		stereoniptomo shotsfile=${SOURCES[1]} anglefile=${SOURCES[2]} t0s=${SOURCES[3]} m0s=${SOURCES[4]} rnips=${SOURCES[5]} betas=${SOURCES[6]} sz=${SOURCES[7]} gz=${SOURCES[8]} vspline=${TARGETS[1]} v0=1.508 nit=%d c0=0.1 temp0=5 |
+		smooth repeat=2
 		''' % (nit))
 
 	model = velinv
-	sv = vspline
+	#sv = vspline
 
 # NIP model setup after velocity model inversion,
 # ray-tracing from acquisition surface to NIP sources

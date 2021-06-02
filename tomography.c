@@ -145,15 +145,15 @@ for a set of points (z,vz) given. TODO
 
 			for(j=app;j<((k+1)*app_len);j++){
 				slow[j*n[0]+i]=1./(v[k][i]*v[k][i]);
-				#ifdef GDB_DEBUG
-				sf_warning("[%d][%d][%d] %f %f ",i,j,k,v[k][i],slow[j*n[0]+i]);
-				#endif
+				//#ifdef GDB_DEBUG
+				//sf_warning("[%d][%d][%d] %f %f ",i,j,k,v[k][i],slow[j*n[0]+i]);
+				//#endif
 			} /* Loop over distance */
 		} /* Loop over depth */
 	} /* Loop over cubic spline functions */
-	#ifdef GDB_DEBUG
-	sf_error("fim");
-	#endif
+	//#ifdef GDB_DEBUG
+	//sf_error("fim");
+	//#endif
 }
 
 void updatevelmodel(float* slow, /* Slowness vector */
@@ -317,4 +317,31 @@ traveltime approximation to calculate the time misfit returned by the function.
 	/* TODO: Evaluate the best function to calcullate the time misfit */
 	tmis = (tmis*tmis)/(nr*ns);
 	return tmis;
+}
+
+void interpolateVelModel(  int *n, /* Velocity model dimension n1=n[0] n2=n[1] */
+			   float *o, /* Velocity model axis origin o1=o[0] o2=o[1] */
+			   float *d, /* Velocity model sampling d1=d[0] d2=d[1] */
+			   float *slow /* Slowness velociy model */)
+/*< TODO >*/
+{
+
+	int nt=5000;
+	float dt=0.001;
+	raytrace rt;
+	sf_eno2 e2;
+	int m, i;
+	float x={1.0,1.0};
+
+	/* initialize ray tracing object */
+	//rt = raytrace_init(2,true,nt,dt,n,o,d,slow,ORDER);
+	e2 = sf_eno2_init(4,n[0],n[1]);
+	sf_eno2_set1(e2,slow);
+	sf_eno2_close(e2);
+
+	//sf_warning("%f",grid2_vel(rt->grd2,x));
+	//m = n[0]*n[1];
+
+	//for(i=0;i<m;i++)
+	//	slow[i] = rt->grd2->pnt->ent->diff[0][i];
 }

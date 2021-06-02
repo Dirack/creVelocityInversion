@@ -10,7 +10,7 @@ The time misfit is calculated by the difference between the reflection traveltim
 #include <rsf.h>
 #include "tomography.h"
 #include "vfsacrsnh_lib.h"
-#define N_STRIPES 20
+#define N_STRIPES 30
 
 int main(int argc, char* argv[])
 {
@@ -51,7 +51,8 @@ int main(int argc, char* argv[])
 	float* sv; // Velocity coordinates of the spline velocity function
 	int nsv; // Dimension of sv vector
 	float* tmp; // Temporary vector to build cubic spline velocity matrix
-	sf_file shots, vel, velinv, angles, m0s, t0s, rnips, betas, sz_file, sv_file, vspline;
+	//TODO float* dv;
+	sf_file shots, vel, velinv, angles, m0s, t0s, rnips, betas, sz_file, gz, vspline;
 
 	sf_init(argc,argv);
 
@@ -65,7 +66,7 @@ int main(int argc, char* argv[])
 	rnips = sf_input("rnips");
 	betas = sf_input("betas");
 	sz_file = sf_input("sz");
-	sv_file = sf_input("sv");
+	gz = sf_input("gz");
 
 	/* Velocity model: get 2D grid parameters */
 	if(!sf_histint(vel,"n1",n)) sf_error("No n1= in input");
@@ -100,23 +101,25 @@ int main(int argc, char* argv[])
 
 	/* Cubic spline vectors */
 	if(!sf_histint(sz_file,"n1",&nsz)) sf_error("No n1= in sz file");
-	if(!sf_histint(sv_file,"n1",&nsv)) sf_error("No n1= in sv file");
-	if(nsz!=nsv) sf_error("n1 should be equal in sz and sv files");
+	//if(!sf_histint(sv_file,"n1",&nsv)) sf_error("No n1= in sv file");
+	//if(nsz!=nsv) sf_error("n1 should be equal in sz and sv files");
 	
 	/* Build cubic spline velocity matrix */
-	tmp = sf_floatalloc(nsv);
-	sf_floatread(tmp,nsv,sv_file);
-	sv = sf_floatalloc(N_STRIPES*nsv);
-
-	for(k=0;k<N_STRIPES;k++){
-		for(i=0;i<nsv;i++){
-			sv[(k*nsv)+i]=tmp[i];
-		}
-	}
-	free(tmp);
+	tmp = sf_floatalloc(1);
+	sf_floatread(tmp,1,gz);
+	sv = sf_floatalloc(N_STRIPES*nsz);
+	//TODO dv = sf_floatalloc(N_STRIPES*nsz);
 
 	sz = sf_floatalloc(nsz);
 	sf_floatread(sz,nsz,sz_file);
+
+	for(k=0;k<N_STRIPES;k++){
+		for(i=0;i<nsz;i++){
+			sv[(k*nsz)+i]=v0+tmp[0]*sz[i];
+		// TODO	dv[(k*nsz)+i]=0.0;
+		}
+	}
+	free(tmp);
 
 	/* VFSA parameters vectors */
 	cnew = sf_floatalloc(N_STRIPES*nsz);
@@ -159,8 +162,8 @@ int main(int argc, char* argv[])
 		sf_warning("n2=%d",nshot);
 		sf_warning("Input file (anglefile)");
 		sf_warning("n1=%d",ns);
-		sf_warning("Input file (sz and sv)");
-		sf_warning("nz=%d nv=%d",nsz,nsv);
+		sf_warning("Input file (sz)");
+		sf_warning("nz=%d",nsz);
 	}
 
 	/* Velocity model from inversion */
@@ -185,7 +188,7 @@ int main(int argc, char* argv[])
 		temp=getVfsaIterationTemperature(q,c0,temp0);
 						
 		/* parameter disturbance */
-		disturbParameters(temp,cnew,sv,nsv*N_STRIPES,0.001);
+		disturbParameters(temp,cnew,sv,nsz*N_STRIPES,0.001);
 
 		/* Function to update velocity model */
 		updateSplineCubicVelModel(slow, n, o, d, nsz, sz, cnew, N_STRIPES);
@@ -233,8 +236,9 @@ int main(int argc, char* argv[])
 			sf_warning("z=%f v=%f",sz[im],ots[im]);
 	}*/
 
+	interpolateVelModel(n, o, d,slow);
 	/* Generate optimal velocity model */
-	updateSplineCubicVelModel(slow, n, o, d, nsz, sz, ots, N_STRIPES);
+	//updateSplineCubicVelModel(slow, n, o, d, nsz, sz, ots, N_STRIPES);
 	
 	/* Convert slowness to velocity */
 	for(im=0;im<nm;im++){

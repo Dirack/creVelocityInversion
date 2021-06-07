@@ -45,14 +45,11 @@ float getVfsaIterationTemperature(int iteration,float dampingFactor,float inicia
 
 }
 
-void disturbGradZ( 	float temperature, /* Temperature of this interation in VFSA */
-			float gznew, /* Grad z disturbed */
+void disturbGradZ( 	float temperature, /* Temperature of this VFSA interation */
+			float* gznew, /* Grad z disturbed */
 			float gz, /* Grad z to disturb */
 			float scale /* Scale to multiply by disturbance */)
-/*< Disturb parameters from the previous iteration of VFSA
- Note: It receives a parameter vector and distubs it accordingly to 
-VFSA disturb parameters step.
- >*/
+/*< Disturb depth velocity gradient from VFSA previous iteration >*/
 {
 
 	float u;
@@ -62,11 +59,11 @@ VFSA disturb parameters step.
 			
 	disturbance = signal(u - 0.5) * temperature * (pow( (1+temperature),fabs(2*u-1) )-1);
 
-	gznew = gz + (disturbance*scale) * (APERTURE);
+	*gznew = gz + (disturbance*scale) * (APERTURE);
 
-	if (gznew >= MAX || gznew <= MIN) {
+	if (*gznew >= MAX || *gznew <= MIN) {
 
-		gznew = (APERTURE) * getRandomNumberBetween0and1() + gz;
+		*gznew = (APERTURE) * getRandomNumberBetween0and1() + gz;
 		
 	}
 
@@ -80,12 +77,9 @@ void updateGzVelModel(float* slow, /* Slowness vector */
 		    float grad /* Velocity gradient */)
 /*< Function to update constant depth velocity gradient:
 Note:
-This is a scratch of the function to update the velocity model,
+This is a function to update the velocity model,
 it uses a constant gradient velocity model, and update the 
 gradient in each iteration of the process.
-
-The purpose is to show that NIP sources will converge to the
-reflector interface with the "right" gradient used.
 
  >*/
 {

@@ -23,7 +23,13 @@ int main(int argc, char* argv[])
 	float** s; // NIP source position (z,x)
 	float gznew=0.0; // Disturbed grad z of the current iteration
 	float gzots; // Optimal Grad z (result)
-	float tmis0=100, otmis=0, deltaE, Em0=0, PM, temp=1, u=0;
+	float tmis0=100; // Time misfit of each VFSA iteration (convergence criteria)
+	float otmis=0; // Best time misfit of all iterations
+	float deltaE; // Difference between the time misfit of this iteration and the previous
+	float Em0=0; // Energy function of VFSA
+	float PM; // Probability function of the Metrópolis criteria of VFSA
+	float temp=1; // This iteration temperature VFSA
+	float u=0; // random number between 0 and 1
 	int ndim; // n1 dimension in shotsfile, should be equal 2
 	int nshot; // n2 dimensions in shotsfile
 	int nm; // Number of samples in velocity grid
@@ -35,10 +41,21 @@ int main(int argc, char* argv[])
 	int ns; // Number of NIP sources
 	int q; // Loop counter for VFSA iteration
 	float tmis; // data time misfit value
-	float *m0, *t0, *RNIP, *BETA;
+	float *m0; // Central CMPs
+	float *t0; // Normal ray traveltime for each m0
+	float *RNIP; // RNIP parameter for each m0
+	float *BETA; // BETA parameter for each m0
 	float gz; // Velocity gradient in depth (z)
-	int i, j;
-	sf_file shots, vel, velinv, angles, m0s, t0s, rnips, betas, gradz;
+	int i, j; // loop counters
+	sf_file shots; // NIP sources for tomography
+	sf_file vel; // initial velocity model
+	sf_file velinv; // inverted model
+	sf_file angles; // NIP sources normal rays angles (Degrees)
+	sf_file m0s; // Central CMPs
+	sf_file t0s; // Normal ray traveltimes
+	sf_file rnips; // RNIP parameter for each m0
+	sf_file betas; // BETA parameter for each m0
+	sf_file gradz; // Velocity gradient in depth
 
 	sf_init(argc,argv);
 
@@ -112,7 +129,7 @@ int main(int argc, char* argv[])
 		sf_warning("n1=%d",ns);
 	}
 
-	/* Velocity models from inversion */
+	/* Velocity model from inversion */
 	sf_putint(velinv,"n1",n[0]);
 	sf_putint(velinv,"n2",n[1]);
 	sf_putint(velinv,"n3",1);
@@ -129,10 +146,10 @@ int main(int argc, char* argv[])
 		temp=getVfsaIterationTemperature(q,c0,temp0);
 						
 		/* parameter disturbance */
-		disturbGradZ(temp,gznew,gz,0.001);
+		disturbGradZ(temp,&gznew,gz,0.001);
 
 		/* Function to update velocity gradient */
-		updateGzVelModel(slow, n, o, d, v0, gz);
+		updateGzVelModel(slow, n, o, d, v0, gznew);
 
 		tmis=0;
 	
@@ -165,7 +182,7 @@ int main(int argc, char* argv[])
 			
 		sf_warning("%f => %d/%d (%f)",gz,q,MAX_ITERATIONS,otmis);	
 
-	} /* loop over iterations */
+	} /* loop over VFSA iterations */
 
 	/* Print optimal velocity gradient */
 	sf_warning("(%f)=> vgrad=%f v0=%f",tmis0,gzots,v0);	

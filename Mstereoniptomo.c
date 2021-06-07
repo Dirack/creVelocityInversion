@@ -191,7 +191,7 @@ int main(int argc, char* argv[])
 		disturbParameters(temp,cnew,sv,nsz*N_STRIPES,0.001);
 
 		/* Function to update velocity model */
-		updateSplineCubicVelModel(slow, n, o, d, nsz, sz, cnew, N_STRIPES);
+		updateCubicSplineVelModel(slow, n, o, d, nsz, sz, cnew, N_STRIPES);
 
 		tmis=0;
 	

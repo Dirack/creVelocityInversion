@@ -91,7 +91,7 @@ and x vector must be in crescent order.
 	}
 }
 
-void updateSplineCubicVelModel( float* slow, /* Slowness vector */
+void updateCubicSplineVelModel( float* slow, /* Slowness vector */
 		    		int* n, /* n[0]=n1 n2=n[1] */
 		    		float* o, /* o[0]=o1 o[1]=o2 */
 		    		float* d, /* d[0]=d1 d[1]=d2 */
@@ -156,37 +156,6 @@ for a set of points (z,vz) given. TODO
 	//#endif
 }
 
-void updatevelmodel(float* slow, /* Slowness vector */
-		    int* n, /* n[0]=n1 n2=n[1] */
-		    float* o, /* o[0]=o1 o[1]=o2 */
-		    float* d, /* d[0]=d1 d[1]=d2 */
-		    float v0, /* First velocity is the near surface velocity */
-		    float grad /* Velocity gradient */)
-/*< Funcion to update constant velocity gradient:
-Note:
-This is a scratch of the function to update the velocity model,
-it uses a constant gradient velocity model, and update the 
-gradient in each iteration of the process.
-
-The purpose is to show that NIP sources will converge to the
-reflector interface with the "right" gradient used.
-
-TODO: Modify this function to VFSA optimization of the velocity model.
- >*/
-{
-	int i, j;
-	float z, v;
-
-	for(i=0;i<n[0];i++){
-
-		z = i*d[0]+o[0];
-		v = grad*z+v0;
-
-		for(j=0;j<n[1];j++){
-			slow[j*n[0]+i]=1./(v*v);
-		} /* Loop over distance */
-	} /* Loop over depth */
-}
 
 float creTimeApproximation(float h, 
 			 float m,
@@ -195,8 +164,13 @@ float creTimeApproximation(float h,
 			 float m0,
 			 float RNIP,
 			 float BETA,
-			 bool cds){ 
-/*< CRE traveltime approximation >*/
+			 bool cds)
+/*< CRE traveltime approximation t(m,h)
+Note: If cds parameter is false, it uses the CRE formula to calculate time.
+If cds parameter is true, it uses the non-hyperbolic CRS formula with CDS condition (RN=RNIP)
+to calculate time.
+>*/
+{ 
 	float alpha;
 	float d = m-m0;
 	float c1;
@@ -247,7 +221,9 @@ traveltime approximation to calculate the time misfit returned by the function.
 	float currentRayAngle;
 	int i, ir, it, is;
 	float p[2], t, nrdeg;
-	int nt=5000, nr=5; //TODO to correct nr
+	/* TODO buil another way to define nt and nr and to define its best values */
+	int nt=5000; // TODO nt is the number of time samples in each ray
+	int nr=5; //TODO nr is the number of ray pairs for each source
 	float dt=0.001;
 	raytrace rt;
 	float** traj; // Ray trajectory (z,x)
@@ -269,15 +245,16 @@ traveltime approximation to calculate the time misfit returned by the function.
 				/* initialize ray tracing object */
 				rt = raytrace_init(2,true,nt,dt,n,o,d,slow,ORDER);
 
-				/* Ray tracing */
 				traj = sf_floatalloc2(2,nt+1);
 				
 				/* initialize ray direction */
+				/* TODO this part is confusing */
 				currentRayAngle=(i==0)?(nrdeg-(ir+1)*DANGLE)*DEG2RAD:(nrdeg+(ir+1)*DANGLE)*DEG2RAD;
 
 				p[0] = -cosf(currentRayAngle);
 				p[1] = sinf(currentRayAngle);
 
+				/* Ray tracing */
 				it = trace_ray (rt, x, p, traj);
 
 				if(it>0){
@@ -293,6 +270,7 @@ traveltime approximation to calculate the time misfit returned by the function.
 					t = abs(nt)*dt;
 					nt += 1000;
 				}else{
+					/* TODO to correct the way you treat side rays */
 					sf_warning("=> x=%f y=%f t=%f",s[1],s[0],t);
 					sf_error("Bad angle, ray get to the model side/bottom");
 				}
@@ -323,7 +301,7 @@ void interpolateVelModel(  int *n, /* Velocity model dimension n1=n[0] n2=n[1] *
 			   float *o, /* Velocity model axis origin o1=o[0] o2=o[1] */
 			   float *d, /* Velocity model sampling d1=d[0] d2=d[1] */
 			   float *slow /* Slowness velociy model */)
-/*< TODO >*/
+/*< TODO to finish this function >*/
 {
 
 	int nt=5000;

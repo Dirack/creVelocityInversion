@@ -10,7 +10,7 @@ as the first iteration for sfstereoniptomo program.
 #include <rsf.h>
 #include "tomography.h"
 #include "zgradvfsa_lib.h"
-#define MAX_ITERATIONS 10
+#define MAX_ITERATIONS 30
 #define temp0 5
 #define c0 0.1
 
@@ -89,7 +89,7 @@ int main(int argc, char* argv[])
 	if(!sf_histint(shots,"n2",&nshot)) sf_error("No n2= in shotfile");
 	s = sf_floatalloc2(ndim,nshot);
 	sf_floatread(s[0],ndim*nshot,shots);
-	gz=0.01;
+	gz=0.;
 	sf_fileclose(shots);
 
 	/* Anglefile: get initial emergence angle */

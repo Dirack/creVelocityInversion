@@ -15,9 +15,9 @@
 
 */
 
-#define MAX 1.0
+#define MAX 0.8
 #define MIN 0
-#define APERTURE 0.5
+#define APERTURE 0.2
 #define hMAX 50
 #define mMAX 50
 #define ITMAX 3000
@@ -61,9 +61,15 @@ void disturbGradZ( 	float temperature, /* Temperature of this VFSA interation */
 
 	*gznew = gz + (disturbance*scale) * (APERTURE);
 
-	if (*gznew >= MAX || *gznew <= MIN) {
+	if (*gznew >= MAX) {
 
-		*gznew = (APERTURE) * getRandomNumberBetween0and1() + gz;
+		*gznew = MAX - (APERTURE) * getRandomNumberBetween0and1();
+		
+	}
+
+	if (*gznew <= MIN) {
+
+		*gznew = (APERTURE) * getRandomNumberBetween0and1() + MIN;
 		
 	}
 

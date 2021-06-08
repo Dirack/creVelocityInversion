@@ -10,7 +10,7 @@ The time misfit is calculated by the difference between the reflection traveltim
 #include <rsf.h>
 #include "tomography.h"
 #include "vfsacrsnh_lib.h"
-#define N_STRIPES 30
+#define N_STRIPES 50
 
 int main(int argc, char* argv[])
 {
@@ -118,12 +118,14 @@ int main(int argc, char* argv[])
 	sz = sf_floatalloc(nsz);
 	sf_floatread(sz,nsz,sz_file);
 
+	/* TODO change sv to delta v spline (disturb in bg model) */
 	for(k=0;k<N_STRIPES;k++){
 		for(i=0;i<nsz;i++){
-			sv[(k*nsz)+i]=v0+tmp[0]*sz[i];
+			//sv[(k*nsz)+i]=v0+tmp[0]*sz[i];
+			sv[(k*nsz)+i]=0.0;
 		}
 	}
-	free(tmp);
+	//free(tmp);
 
 	/* VFSA parameters vectors */
 	cnew = sf_floatalloc(N_STRIPES*nsz);
@@ -145,7 +147,7 @@ int main(int argc, char* argv[])
 	BETA = sf_floatalloc(ns);
 	sf_floatread(BETA,ns,betas);
 
-	/* get slowness squared */
+	/* get slowness squared (Background model) */
 	nm = n[0]*n[1];
 	slow =  sf_floatalloc(nm);
 	sf_floatread(slow,nm,vel);
@@ -195,7 +197,8 @@ int main(int argc, char* argv[])
 		disturbParameters(temp,cnew,sv,nsz*N_STRIPES,0.001);
 
 		/* Function to update velocity model */
-		updateCubicSplineVelModel(slow, n, o, d, nsz, sz, cnew, N_STRIPES);
+		/* TODO change tmp variable name to grad z*/
+		updateCubicSplineVelModel(slow, n, o, d, nsz, sz, cnew, tmp[0], v0, N_STRIPES);
 
 		tmis=0;
 	
@@ -241,7 +244,7 @@ int main(int argc, char* argv[])
 	}*/
 
 	/* Generate optimal velocity model */
-	interpolateVelModel(n, o, d,slow);
+	//interpolateVelModel(n, o, d,slow);
 	
 	/* Convert slowness to velocity */
 	for(im=0;im<nm;im++){

@@ -98,6 +98,8 @@ void updateCubicSplineVelModel( float* slow, /* Slowness vector */
 			    	int dim, /* Dimension of (z,vz) vectors */
 				float* sz, /* Spline not Depth coordinates */
 				float* sv, /* Spline not Velocity coordinates */
+				float gzbg, /* Background velocity gradient in z */
+				float v0, /* Near surface velocity */
 				int n_stripes)
 /*< Funcion to update spline cubic velocity model:
 Note:
@@ -112,10 +114,10 @@ for a set of points (z,vz) given. TODO
 	float v[n_stripes][n[0]];
 	int app, app_len=n[1]/n_stripes;
 
-	coef = sf_floatalloc2(4*(dim-1),n_stripes);
+	//coef = sf_floatalloc2(4*(dim-1),n_stripes);
 
 	/* Calculate spline coeficients */
-	calculateSplineCoeficients(dim,sz,sv,coef,n_stripes);
+	//calculateSplineCoeficients(dim,sz,sv,coef,n_stripes);
 
 	/* Calculate velocity function */
 	for(k=0;k<n_stripes;k++){
@@ -130,7 +132,8 @@ for a set of points (z,vz) given. TODO
 			while(z<=sz[i]){
 				z = (j*d[0]+o[0])-sz[i-1];
 				if(j>=n[0]) break;
-				v[k][j] = coef[k][0+ic]*z*z*z+coef[k][1+ic]*z*z+coef[k][2+ic]*z+coef[k][3+ic];
+				//v[k][j] = coef[k][0+ic]*z*z*z+coef[k][1+ic]*z*z+coef[k][2+ic]*z+coef[k][3+ic];
+				v[k][j] = v0+gzbg*z+sv[(k*dim)+i-1];
 				j++;
 			}
 		}
@@ -144,6 +147,7 @@ for a set of points (z,vz) given. TODO
 		for(i=0;i<n[0];i++){
 
 			for(j=app;j<((k+1)*app_len);j++){
+				/* TODO Use 2D eno interpolation to obtain velocity model*/
 				slow[j*n[0]+i]=1./(v[k][i]*v[k][i]);
 				//#ifdef GDB_DEBUG
 				//sf_warning("[%d][%d][%d] %f %f ",i,j,k,v[k][i],slow[j*n[0]+i]);

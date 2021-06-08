@@ -49,10 +49,18 @@ int main(int argc, char* argv[])
 	float* sz; // Depth coordinates of the spline velocity function
 	int nsz; // Dimension of sz vector
 	float* sv; // Velocity coordinates of the spline velocity function
-	int nsv; // Dimension of sv vector
 	float* tmp; // Temporary vector to build cubic spline velocity matrix
-	//TODO float* dv;
-	sf_file shots, vel, velinv, angles, m0s, t0s, rnips, betas, sz_file, gz, vspline;
+	sf_file shots; // NIP sources (z,x)
+	sf_file vel; // background velocity model
+	sf_file velinv; // Inverted velocity model
+	sf_file angles; // Normal ray angles (degrees)
+	sf_file m0s; // Central CMPs m0
+	sf_file t0s; // Normal ray traveltimes
+	sf_file rnips; // RNIP parameter for each m0
+	sf_file betas; // BETA parameter for each m0
+	sf_file sz_file; // z coordinates of the cubic spline functions
+	sf_file gz; // Depth velocity gradient for background model
+	sf_file vspline; // Cubic spline velocity model
 
 	sf_init(argc,argv);
 
@@ -101,14 +109,11 @@ int main(int argc, char* argv[])
 
 	/* Cubic spline vectors */
 	if(!sf_histint(sz_file,"n1",&nsz)) sf_error("No n1= in sz file");
-	//if(!sf_histint(sv_file,"n1",&nsv)) sf_error("No n1= in sv file");
-	//if(nsz!=nsv) sf_error("n1 should be equal in sz and sv files");
 	
 	/* Build cubic spline velocity matrix */
 	tmp = sf_floatalloc(1);
 	sf_floatread(tmp,1,gz);
 	sv = sf_floatalloc(N_STRIPES*nsz);
-	//TODO dv = sf_floatalloc(N_STRIPES*nsz);
 
 	sz = sf_floatalloc(nsz);
 	sf_floatread(sz,nsz,sz_file);
@@ -116,7 +121,6 @@ int main(int argc, char* argv[])
 	for(k=0;k<N_STRIPES;k++){
 		for(i=0;i<nsz;i++){
 			sv[(k*nsz)+i]=v0+tmp[0]*sz[i];
-		// TODO	dv[(k*nsz)+i]=0.0;
 		}
 	}
 	free(tmp);
@@ -236,9 +240,8 @@ int main(int argc, char* argv[])
 			sf_warning("z=%f v=%f",sz[im],ots[im]);
 	}*/
 
-	interpolateVelModel(n, o, d,slow);
 	/* Generate optimal velocity model */
-	//updateSplineCubicVelModel(slow, n, o, d, nsz, sz, ots, N_STRIPES);
+	interpolateVelModel(n, o, d,slow);
 	
 	/* Convert slowness to velocity */
 	for(im=0;im<nm;im++){

@@ -244,12 +244,12 @@ int main(int argc, char* argv[])
 	}*/
 
 	/* Generate optimal velocity model */
-	//interpolateVelModel(n, o, d,slow);
+	interpolateVelModel(n, o, d,sv,sz,slow,nsz,N_STRIPES,v0,tmp[0]);
 	
 	/* Convert slowness to velocity */
-	for(im=0;im<nm;im++){
-		slow[im] = sqrt(1.0/slow[im]);
-	}
+	//for(im=0;im<nm;im++){
+	//	slow[im] = sqrt(1.0/slow[im]);
+	//}
 
 	/* Write velocity model file */
 	sf_floatwrite(slow,nm,velinv);

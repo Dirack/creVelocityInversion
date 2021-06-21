@@ -16,7 +16,7 @@
 */
 
 #define MAX 0.1
-#define MIN 0
+#define MIN -0.1
 #define APERTURE 0.05
 #define Rnip_MAX 4
 #define Rnip_MIN 0

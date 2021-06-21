@@ -119,7 +119,7 @@ for a set of points (z,vz) given. TODO
 	/* Calculate spline coeficients */
 	//calculateSplineCoeficients(dim,sz,sv,coef,n_stripes);
 
-	/* Calculate velocity function */
+	/* Calculate vel(city function */
 	for(k=0;k<n_stripes;k++){
 
 		z = o[0];
@@ -134,6 +134,7 @@ for a set of points (z,vz) given. TODO
 				if(j>=n[0]) break;
 				//v[k][j] = coef[k][0+ic]*z*z*z+coef[k][1+ic]*z*z+coef[k][2+ic]*z+coef[k][3+ic];
 				v[k][j] = v0+gzbg*z+sv[(k*dim)+i-1];
+				//v[k][j] = sv[(k*dim)+i-1];
 				j++;
 			}
 		}
@@ -304,26 +305,43 @@ traveltime approximation to calculate the time misfit returned by the function.
 void interpolateVelModel(  int *n, /* Velocity model dimension n1=n[0] n2=n[1] */
 			   float *o, /* Velocity model axis origin o1=o[0] o2=o[1] */
 			   float *d, /* Velocity model sampling d1=d[0] d2=d[1] */
-			   float *slow /* Slowness velociy model */)
+			   float *sv, /* Slowness velociy model */
+			   float *sz,
+			   float *slow,
+			   int nsz,
+			   int nsx,
+			   float v0,
+			   float gzbg)
 /*< TODO to finish this function >*/
 {
 
-	int nt=5000;
-	float dt=0.001;
-	raytrace rt;
-	sf_eno2 e2;
-	int m, i;
-	float x={1.0,1.0};
+	sf_eno2 map;
+	float *f, f2[2];
+	int k, i, j, i1, i2;
+	float x, y;
 
-	/* initialize ray tracing object */
-	//rt = raytrace_init(2,true,nt,dt,n,o,d,slow,ORDER);
-	e2 = sf_eno2_init(4,n[0],n[1]);
-	sf_eno2_set1(e2,slow);
-	sf_eno2_close(e2);
+	/* Calculate velocity function */
+        for(k=0;k<nsx;k++){
 
-	//sf_warning("%f",grid2_vel(rt->grd2,x));
-	//m = n[0]*n[1];
+                for(i=0;i<nsz;i++){
 
-	//for(i=0;i<m;i++)
-	//	slow[i] = rt->grd2->pnt->ent->diff[0][i];
+			sv[(k*nsz)+i] = v0+gzbg*sz[i]+sv[(k*nsz)+i];
+                }
+
+	}
+
+
+	map = sf_eno2_init(3,nsz,nsx);
+
+	sf_eno2_set1(map,sv);
+
+        for(i2=0;i2<n[1];i2++){
+
+                for(i1=0;i1<n[0];i1++){
+                        x = i1*d[0]; i=x; x -= i;
+                        y = i2*d[1]; j=y; y -= j;
+                        sf_eno2_apply(map,i,j,x,y,&slow[i2*n[0]+i1],f2,FUNC);
+                }
+        }
+        sf_eno2_close(map);
 }

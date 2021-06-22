@@ -62,6 +62,7 @@ int main(int argc, char* argv[])
 	sf_file gz; // Depth velocity gradient for background model
 	sf_file vspline; // Cubic spline velocity model
 
+
 	sf_init(argc,argv);
 
 	shots = sf_input("shotsfile");

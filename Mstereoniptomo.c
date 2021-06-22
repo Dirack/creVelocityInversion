@@ -198,8 +198,12 @@ int main(int argc, char* argv[])
 
 		/* Function to update velocity model */
 		/* TODO change tmp variable name to grad z*/
-		updateCubicSplineVelModel(slow, n, o, d, nsz, sz, cnew, tmp[0], v0, N_STRIPES);
+		//updateCubicSplineVelModel(slow, n, o, d, nsz, sz, cnew, tmp[0], v0, N_STRIPES);
 
+		interpolateSlowModel(n, o, d,sv,sz,slow,nsz,N_STRIPES,v0,tmp[0]);
+		/*for(im=0;im<nm;im++){
+			slow[im] = sqrt(1.0/slow[im]);
+		}*/
 		tmis=0;
 	
 		/* Calculate time missfit through forward modeling */		

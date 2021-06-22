@@ -51,7 +51,7 @@ mlmod(interfaces='interfaces',
 # Constant velocity model for stereoniptomo
 Flow(model,None,
      '''
-     spike n1=301 d1=0.01 o1=0 n2=1001 d2=0.01 o2=0 mag=1.508 |
+     spike n1=301 d1=0.01 o1=0 n2=1001 d2=0.01 o2=-2 mag=1.508 |
      put label1=Depth unit1=km label2=Position unit2=km
      ''' )
 
@@ -68,20 +68,81 @@ Flow('anglefile',['beta','t0s','m0s'],
 	getparameter t0s=${SOURCES[1]} m0s=${SOURCES[2]} beta=y
 	''')
 
+# First iteration to get the velocity gradient in z
+#velinv = 'modelgz_0'
+nipsources = 'nipsources_1'
+nipangles = 'nipangles_1'
+ray =  'ray_1'
+nipsources = 'nipsources_1'
+angles = 'angles_1'
+
+# NIP model setup, ray-tracing from acquisition surface to NIP sources
+Flow([ray,nipangles],[model,'shotsfile','anglefile','t0s'],
+	'''
+	nipmodsetup shotsfile=${SOURCES[1]} anglefile=${SOURCES[2]} t0s=${SOURCES[3]} nipangles=${TARGETS[1]}
+	''')
+
+# Rotate ray angles in NIP sources positions in 180 degrees
+Flow(angles,nipangles,'math output="input-180" | put n1=%d d1=1 o1=1'%(ns))
+Flow(nipsources,ray,'dd type=float | put n1=2 n2=%d'%(ns))
+
+for i in range(2):
+
+	velinv = 'modelgz_%d' % i
+	gz = 'gz_%d' % i
+	Flow([velinv,gz],
+		[model,nipsources,angles,'t0s','m0s','rnips','betas'],
+		'''
+		zgradtomo shotsfile=${SOURCES[1]} anglefile=${SOURCES[2]} t0s=${SOURCES[3]} m0s=${SOURCES[4]} rnips=${SOURCES[5]} betas=${SOURCES[6]} gz=${TARGETS[1]} v0=1.508 nit=%d c0=0.1 temp0=5
+		''')
+
+	model = velinv
+
+# NIP model setup after velocity model inversion,
+# ray-tracing from acquisition surface to NIP sources
+Flow(['raygz','nipanglesgz'],[velinv,'shotsfile','anglefile','t0s'],
+        '''
+        nipmodsetup shotsfile=${SOURCES[1]} anglefile=${SOURCES[2]} t0s=${SOURCES[3]} nipangles=${TARGETS[1]}
+        ''')
+
+Flow('resultgz','raygz','dd type=float | put n1=2 n2=%d'%(ns))
+
+# Plot inverted velocity model with NIP sources
+Plot('velocityModelgz',velinv,
+	'''
+	grey color=j scalebar=y barreverse=y bias=1.508 title="Inverted velocity model" barlabel="Velocity" barunit="Km/s" min2=1 max2=5
+	''')
+
+Plot('inverted-nipsourcesgz','raygz','sfgraph scalebar=y symbol=+ transp=y yreverse=y max1=3 min1=0 min2=1 max2=5 wanttitle=n wantaxis=n plotcol=7 symbolsz=10')
+
+Plot('inverted-interfacesgz',['velocityModelgz','inverted-nipsourcesgz'],'Overlay')
+
+# Plot original velocity model
+Plot('mod1gz','mod1',
+	'''
+	put label1=Depth unit1=Km label2=Position unit2=Km |
+	grey color=j scalebar=y barreverse=y bias=1.508 title="Original velocity model" barlabel="Velocity" barunit="Km/s" min1=0 max1=3 min2=1 max2=5
+	''')
+
+Plot('mod1-imggz',['mod1gz','inverted-nipsourcesgz'],'Overlay')
+
+# Plot result: Inverted and original models side by side
+Result('invertedgz',['inverted-interfacesgz','mod1-imggz'],'SideBySideIso')
+
 # Points of the cubic spline velocity function
 Flow('sz',None,
 	'''
-	spike n1=7 d1=1 o1=0 |
-	math output="x1*1.0"
+	spike n1=11 d1=1 o1=0 |
+	math output="x1*0.3"
 	''')
 
-sv='vspline_0'
-Flow(sv,'sz',
-	'''
-	math output="input*0.03+1.5"
-	''')
-
-for i in range(1,ni+1,1):
+#sv='vspline_2'
+#Flow(sv,'sz',
+#	'''
+#	math output="input*0.453+1.5"
+#	''')
+model = velinv
+for i in range(2,10,1):
 
 	velinv = 'model_%d' % i
 	vspline = 'vspline_%d' % i
@@ -103,13 +164,14 @@ for i in range(1,ni+1,1):
 	# forward modeling
 	# do a ray-tracing from NIP sources to acquisition surface and measure traveltime
 	Flow([velinv,vspline],
-		[model,nipsources,angles,'t0s','m0s','rnips','betas','sz',sv],
+		[model,nipsources,angles,'t0s','m0s','rnips','betas','sz',gz],
 		'''
-		stereoniptomo shotsfile=${SOURCES[1]} anglefile=${SOURCES[2]} t0s=${SOURCES[3]} m0s=${SOURCES[4]} rnips=${SOURCES[5]} betas=${SOURCES[6]} sz=${SOURCES[7]} sv=${SOURCES[8]} vspline=${TARGETS[1]} v0=1.508 nit=%d c0=0.1 temp0=5
+		stereoniptomo shotsfile=${SOURCES[1]} anglefile=${SOURCES[2]} t0s=${SOURCES[3]} m0s=${SOURCES[4]} rnips=${SOURCES[5]} betas=${SOURCES[6]} sz=${SOURCES[7]} gz=${SOURCES[8]} vspline=${TARGETS[1]} v0=1.508 nit=%d c0=0.1 temp0=5 |
+		smooth repeat=2
 		''' % (nit))
 
 	model = velinv
-	sv = vspline
+	#sv = vspline
 
 # NIP model setup after velocity model inversion,
 # ray-tracing from acquisition surface to NIP sources
@@ -123,17 +185,18 @@ Flow('result','ray2','dd type=float | put n1=2 n2=%d'%(ns))
 # Plot inverted velocity model with NIP sources
 Plot('velocityModel',velinv,
 	'''
-	grey color=j scalebar=n bias=1.508 title="Inverted velocity model" barlabel="Velocity" barunit="Km/s" min2=1 max2=5
+	grey color=j scalebar=y barreverse=y bias=1.508 title="Inverted velocity model" barlabel="Velocity" barunit="Km/s" min2=1 max2=5
 	''')
 
-Plot('inverted-nipsources','ray2','sfgraph symbol=+ transp=y yreverse=y max1=3 min1=0 min2=1 max2=5 wanttitle=n wantaxis=n plotcol=7 symbolsz=10')
+Plot('inverted-nipsources','ray2','sfgraph scalebar=y symbol=+ transp=y yreverse=y max1=3 min1=0 min2=1 max2=5 wanttitle=n wantaxis=n plotcol=7 symbolsz=10')
 
 Plot('inverted-interfaces',['velocityModel','inverted-nipsources'],'Overlay')
 
 # Plot original velocity model
 Plot('mod1','mod1',
 	'''
-	grey color=j scalebar=n bias=1.508 title="Original velocity model" barlabel="Velocity" barunit="Km/s" min1=0 max1=3 min2=1 max2=5
+	put label1=Depth unit1=Km label2=Position unit2=Km |
+	grey color=j scalebar=y barreverse=y bias=1.508 title="Original velocity model" barlabel="Velocity" barunit="Km/s" min1=0 max1=3 min2=1 max2=5
 	''')
 
 Plot('mod1-img',['mod1','inverted-nipsources'],'Overlay')

@@ -91,13 +91,15 @@ and x vector must be in crescent order.
 	}
 }
 
-void updateSplineCubicVelModel( float* slow, /* Slowness vector */
+void updateCubicSplineVelModel( float* slow, /* Slowness vector */
 		    		int* n, /* n[0]=n1 n2=n[1] */
 		    		float* o, /* o[0]=o1 o[1]=o2 */
 		    		float* d, /* d[0]=d1 d[1]=d2 */
 			    	int dim, /* Dimension of (z,vz) vectors */
 				float* sz, /* Spline not Depth coordinates */
 				float* sv, /* Spline not Velocity coordinates */
+				float gzbg, /* Background velocity gradient in z */
+				float v0, /* Near surface velocity */
 				int n_stripes)
 /*< Funcion to update spline cubic velocity model:
 Note:
@@ -106,18 +108,19 @@ for a set of points (z,vz) given. TODO
 
  >*/
 {
-	int i, j=0, ic, k;
+	int i, j=0, k;
+	//int ic;
 	float z=0.0;
-	float** coef;
+	//float** coef;
 	float v[n_stripes][n[0]];
 	int app, app_len=n[1]/n_stripes;
 
-	coef = sf_floatalloc2(4*(dim-1),n_stripes);
+	//coef = sf_floatalloc2(4*(dim-1),n_stripes);
 
 	/* Calculate spline coeficients */
-	calculateSplineCoeficients(dim,sz,sv,coef,n_stripes);
+	//calculateSplineCoeficients(dim,sz,sv,coef,n_stripes);
 
-	/* Calculate velocity function */
+	/* Calculate vel(city function */
 	for(k=0;k<n_stripes;k++){
 
 		z = o[0];
@@ -125,12 +128,14 @@ for a set of points (z,vz) given. TODO
 
 		for(i=1;i<dim;i++){
 			
-			ic = (i-1)*4;
+			//ic = (i-1)*4;
 
 			while(z<=sz[i]){
 				z = (j*d[0]+o[0])-sz[i-1];
 				if(j>=n[0]) break;
-				v[k][j] = coef[k][0+ic]*z*z*z+coef[k][1+ic]*z*z+coef[k][2+ic]*z+coef[k][3+ic];
+				//v[k][j] = coef[k][0+ic]*z*z*z+coef[k][1+ic]*z*z+coef[k][2+ic]*z+coef[k][3+ic];
+				v[k][j] = v0+gzbg*z+sv[(k*dim)+i-1];
+				//v[k][j] = sv[(k*dim)+i-1];
 				j++;
 			}
 		}
@@ -144,49 +149,19 @@ for a set of points (z,vz) given. TODO
 		for(i=0;i<n[0];i++){
 
 			for(j=app;j<((k+1)*app_len);j++){
+				/* TODO Use 2D eno interpolation to obtain velocity model*/
 				slow[j*n[0]+i]=1./(v[k][i]*v[k][i]);
-				#ifdef GDB_DEBUG
-				sf_warning("[%d][%d][%d] %f %f ",i,j,k,v[k][i],slow[j*n[0]+i]);
-				#endif
+				//#ifdef GDB_DEBUG
+				//sf_warning("[%d][%d][%d] %f %f ",i,j,k,v[k][i],slow[j*n[0]+i]);
+				//#endif
 			} /* Loop over distance */
 		} /* Loop over depth */
 	} /* Loop over cubic spline functions */
-	#ifdef GDB_DEBUG
-	sf_error("fim");
-	#endif
+	//#ifdef GDB_DEBUG
+	//sf_error("fim");
+	//#endif
 }
 
-void updatevelmodel(float* slow, /* Slowness vector */
-		    int* n, /* n[0]=n1 n2=n[1] */
-		    float* o, /* o[0]=o1 o[1]=o2 */
-		    float* d, /* d[0]=d1 d[1]=d2 */
-		    float v0, /* First velocity is the near surface velocity */
-		    float grad /* Velocity gradient */)
-/*< Funcion to update constant velocity gradient:
-Note:
-This is a scratch of the function to update the velocity model,
-it uses a constant gradient velocity model, and update the 
-gradient in each iteration of the process.
-
-The purpose is to show that NIP sources will converge to the
-reflector interface with the "right" gradient used.
-
-TODO: Modify this function to VFSA optimization of the velocity model.
- >*/
-{
-	int i, j;
-	float z, v;
-
-	for(i=0;i<n[0];i++){
-
-		z = i*d[0]+o[0];
-		v = grad*z+v0;
-
-		for(j=0;j<n[1];j++){
-			slow[j*n[0]+i]=1./(v*v);
-		} /* Loop over distance */
-	} /* Loop over depth */
-}
 
 float creTimeApproximation(float h, 
 			 float m,
@@ -195,8 +170,13 @@ float creTimeApproximation(float h,
 			 float m0,
 			 float RNIP,
 			 float BETA,
-			 bool cds){ 
-/*< CRE traveltime approximation >*/
+			 bool cds)
+/*< CRE traveltime approximation t(m,h)
+Note: If cds parameter is false, it uses the CRE formula to calculate time.
+If cds parameter is true, it uses the non-hyperbolic CRS formula with CDS condition (RN=RNIP)
+to calculate time.
+>*/
+{ 
 	float alpha;
 	float d = m-m0;
 	float c1;
@@ -247,7 +227,9 @@ traveltime approximation to calculate the time misfit returned by the function.
 	float currentRayAngle;
 	int i, ir, it, is;
 	float p[2], t, nrdeg;
-	int nt=5000, nr=5; //TODO to correct nr
+	/* TODO buil another way to define nt and nr and to define its best values */
+	int nt=5000; // TODO nt is the number of time samples in each ray
+	int nr=5; //TODO nr is the number of ray pairs for each source
 	float dt=0.001;
 	raytrace rt;
 	float** traj; // Ray trajectory (z,x)
@@ -269,15 +251,16 @@ traveltime approximation to calculate the time misfit returned by the function.
 				/* initialize ray tracing object */
 				rt = raytrace_init(2,true,nt,dt,n,o,d,slow,ORDER);
 
-				/* Ray tracing */
 				traj = sf_floatalloc2(2,nt+1);
 				
 				/* initialize ray direction */
+				/* TODO this part is confusing */
 				currentRayAngle=(i==0)?(nrdeg-(ir+1)*DANGLE)*DEG2RAD:(nrdeg+(ir+1)*DANGLE)*DEG2RAD;
 
 				p[0] = -cosf(currentRayAngle);
 				p[1] = sinf(currentRayAngle);
 
+				/* Ray tracing */
 				it = trace_ray (rt, x, p, traj);
 
 				if(it>0){
@@ -293,6 +276,7 @@ traveltime approximation to calculate the time misfit returned by the function.
 					t = abs(nt)*dt;
 					nt += 1000;
 				}else{
+					/* TODO to correct the way you treat side rays */
 					sf_warning("=> x=%f y=%f t=%f",s[1],s[0],t);
 					sf_error("Bad angle, ray get to the model side/bottom");
 				}
@@ -317,4 +301,102 @@ traveltime approximation to calculate the time misfit returned by the function.
 	/* TODO: Evaluate the best function to calcullate the time misfit */
 	tmis = (tmis*tmis)/(nr*ns);
 	return tmis;
+}
+
+void interpolateVelModel(  int *n, /* Velocity model dimension n1=n[0] n2=n[1] */
+			   float *o, /* Velocity model axis origin o1=o[0] o2=o[1] */
+			   float *d, /* Velocity model sampling d1=d[0] d2=d[1] */
+			   float *sv, /* Velocity model disturbance */
+			   float *sz, /* Depth coordinates of sv vector */
+			   float *slow, /* Velocity model */
+			   int nsz, /* sv n1 dimwnsion */
+			   int nsx, /* sv n2 dimension */
+			   float v0, /* Near surface velocity */
+			   float gzbg /* Depth velocity gradient */)
+/*< Velocity model interpolation
+Note: This function uses a sv control points grid to obtain the complete
+velocity model matrix through eno 2D interpolation. The sv vector is the
+velocity disturbance of a constant velocity depth gradient model, that
+velocity increases linearly with depth for gzbg gradient given.
+ >*/
+{
+
+	int i, j;
+
+	/* Calculate velocity function */
+        for(j=0;j<nsx;j++){
+
+                for(i=0;i<nsz;i++){
+
+			sv[(j*nsz)+i] = v0+gzbg*sz[i]+sv[(j*nsz)+i];
+                }
+
+	}
+
+	/* Interpolate velocity matrix */
+	enoInterpolation2d(n,o,d,sv,slow,nsz,nsx);
+}
+
+void interpolateSlowModel( int *n, /* Velocity model dimension n1=n[0] n2=n[1] */
+			   float *o, /* Velocity model axis origin o1=o[0] o2=o[1] */
+			   float *d, /* Velocity model sampling d1=d[0] d2=d[1] */
+			   float *sv, /* Velociy disturbance */
+			   float *sz, /* Depth coordinate of disturbance */
+			   float *slow, /* Slowness model */
+			   int nsz, /* n1 dimension of sv */
+			   int nsx, /* n2 dimension of sv */
+			   float v0, /* Near surface velocity */
+			   float gzbg /* Background gradient in depth */)
+/*< Slowness model interpolation
+Note: This function uses a sv control points grid to obtain the complete
+slowness model matrix through eno 2D interpolation. The sv vector is the
+velocity disturbance of a constant velocity depth gradient model, that
+velocity increases linearly with depth for gzbg gradient given.
+ >*/
+{
+
+	int i, nm; // Loop counters and indexes
+
+	interpolateVelModel(n, o, d,sv,sz,slow,nsz,nsx,v0,gzbg);
+
+	/* transform velocity to slowness */
+	nm =n[0]*n[1];
+	for(i=0;i<nm;i++){
+			slow[i] = 1.0/(slow[i]*slow[i]);
+	}
+}
+
+void enoInterpolation2d(int *n, /* Interpolated vector dimension n1=n[0] n2=n[1] */
+			float *o, /* Interpolated vector  axis origin o1=o[0] o2=o[1] */
+			float *d, /* Interpolated vector sampling d1=d[0] d2=d[1] */
+			float *ov, /* Original vector to interpolate */
+			float *iv, /* Interpolated vector */
+			int nov1, /* Original vector n1 dimension */
+			int nov2 /* Orignanl vector n2 dimension */)
+/*< Eno interpolation 2D function
+Note: This function interpolates a vector increasing the number of
+samples in the interpolated vector using eno interpolation. This vector
+is a 2D matrix stored in a vector ov by columns (ov[j*n1+i]) and the new
+vector iv will be the interpolated vector.
+ >*/
+{
+
+	sf_eno2 map;
+	float f2[2];
+	int i, j, i1, i2;
+	float x, y;
+
+	map = sf_eno2_init(3,nov1,nov2);
+
+	sf_eno2_set1(map,ov);
+
+        for(i2=0;i2<n[1];i2++){
+
+                for(i1=0;i1<n[0];i1++){
+                        x = i1*d[0]+o[0]; i=x; x -= i;
+                        y = i2*d[1]+o[1]; j=y; y -= j;
+                        sf_eno2_apply(map,i,j,x,y,&iv[i2*n[0]+i1],f2,FUNC);
+                }
+        }
+        sf_eno2_close(map);
 }

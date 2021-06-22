@@ -10,7 +10,7 @@ The time misfit is calculated by the difference between the reflection traveltim
 #include <rsf.h>
 #include "tomography.h"
 #include "vfsacrsnh_lib.h"
-#define N_STRIPES 20
+#define N_STRIPES 50
 
 int main(int argc, char* argv[])
 {
@@ -49,9 +49,19 @@ int main(int argc, char* argv[])
 	float* sz; // Depth coordinates of the spline velocity function
 	int nsz; // Dimension of sz vector
 	float* sv; // Velocity coordinates of the spline velocity function
-	int nsv; // Dimension of sv vector
 	float* tmp; // Temporary vector to build cubic spline velocity matrix
-	sf_file shots, vel, velinv, angles, m0s, t0s, rnips, betas, sz_file, sv_file, vspline;
+	sf_file shots; // NIP sources (z,x)
+	sf_file vel; // background velocity model
+	sf_file velinv; // Inverted velocity model
+	sf_file angles; // Normal ray angles (degrees)
+	sf_file m0s; // Central CMPs m0
+	sf_file t0s; // Normal ray traveltimes
+	sf_file rnips; // RNIP parameter for each m0
+	sf_file betas; // BETA parameter for each m0
+	sf_file sz_file; // z coordinates of the cubic spline functions
+	sf_file gz; // Depth velocity gradient for background model
+	sf_file vspline; // Cubic spline velocity model
+
 
 	sf_init(argc,argv);
 
@@ -65,7 +75,7 @@ int main(int argc, char* argv[])
 	rnips = sf_input("rnips");
 	betas = sf_input("betas");
 	sz_file = sf_input("sz");
-	sv_file = sf_input("sv");
+	gz = sf_input("gz");
 
 	/* Velocity model: get 2D grid parameters */
 	if(!sf_histint(vel,"n1",n)) sf_error("No n1= in input");
@@ -100,23 +110,22 @@ int main(int argc, char* argv[])
 
 	/* Cubic spline vectors */
 	if(!sf_histint(sz_file,"n1",&nsz)) sf_error("No n1= in sz file");
-	if(!sf_histint(sv_file,"n1",&nsv)) sf_error("No n1= in sv file");
-	if(nsz!=nsv) sf_error("n1 should be equal in sz and sv files");
 	
 	/* Build cubic spline velocity matrix */
-	tmp = sf_floatalloc(nsv);
-	sf_floatread(tmp,nsv,sv_file);
-	sv = sf_floatalloc(N_STRIPES*nsv);
-
-	for(k=0;k<N_STRIPES;k++){
-		for(i=0;i<nsv;i++){
-			sv[(k*nsv)+i]=tmp[i];
-		}
-	}
-	free(tmp);
+	tmp = sf_floatalloc(1);
+	sf_floatread(tmp,1,gz);
+	sv = sf_floatalloc(N_STRIPES*nsz);
 
 	sz = sf_floatalloc(nsz);
 	sf_floatread(sz,nsz,sz_file);
+
+	/* TODO change sv to delta v spline (disturb in bg model) */
+	for(k=0;k<N_STRIPES;k++){
+		for(i=0;i<nsz;i++){
+			//sv[(k*nsz)+i]=v0+tmp[0]*sz[i];
+			sv[(k*nsz)+i]=0.0;
+		}
+	}
 
 	/* VFSA parameters vectors */
 	cnew = sf_floatalloc(N_STRIPES*nsz);
@@ -138,7 +147,7 @@ int main(int argc, char* argv[])
 	BETA = sf_floatalloc(ns);
 	sf_floatread(BETA,ns,betas);
 
-	/* get slowness squared */
+	/* get slowness squared (Background model) */
 	nm = n[0]*n[1];
 	slow =  sf_floatalloc(nm);
 	sf_floatread(slow,nm,vel);
@@ -159,8 +168,8 @@ int main(int argc, char* argv[])
 		sf_warning("n2=%d",nshot);
 		sf_warning("Input file (anglefile)");
 		sf_warning("n1=%d",ns);
-		sf_warning("Input file (sz and sv)");
-		sf_warning("nz=%d nv=%d",nsz,nsv);
+		sf_warning("Input file (sz)");
+		sf_warning("nz=%d",nsz);
 	}
 
 	/* Velocity model from inversion */
@@ -185,10 +194,10 @@ int main(int argc, char* argv[])
 		temp=getVfsaIterationTemperature(q,c0,temp0);
 						
 		/* parameter disturbance */
-		disturbParameters(temp,cnew,sv,nsv*N_STRIPES,0.001);
+		disturbParameters(temp,cnew,sv,nsz*N_STRIPES,0.001);
 
 		/* Function to update velocity model */
-		updateSplineCubicVelModel(slow, n, o, d, nsz, sz, cnew, N_STRIPES);
+		interpolateSlowModel(n, o, d,sv,sz,slow,nsz,N_STRIPES,v0,tmp[0]);
 
 		tmis=0;
 	
@@ -226,20 +235,8 @@ int main(int argc, char* argv[])
 
 	} /* loop over VFSA iterations */
 
-	/* Print optimal velocity gradient
-	if(verb){
-		sf_warning("Result: Best time misfit (%f)",tmis0);
-		for(im=0;im<nsz;im++)
-			sf_warning("z=%f v=%f",sz[im],ots[im]);
-	}*/
-
 	/* Generate optimal velocity model */
-	updateSplineCubicVelModel(slow, n, o, d, nsz, sz, ots, N_STRIPES);
-	
-	/* Convert slowness to velocity */
-	for(im=0;im<nm;im++){
-		slow[im] = sqrt(1.0/slow[im]);
-	}
+	interpolateVelModel(n, o, d,sv,sz,slow,nsz,N_STRIPES,v0,tmp[0]);
 
 	/* Write velocity model file */
 	sf_floatwrite(slow,nm,velinv);

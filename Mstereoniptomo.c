@@ -125,7 +125,6 @@ int main(int argc, char* argv[])
 			sv[(k*nsz)+i]=0.0;
 		}
 	}
-	//free(tmp);
 
 	/* VFSA parameters vectors */
 	cnew = sf_floatalloc(N_STRIPES*nsz);
@@ -197,13 +196,8 @@ int main(int argc, char* argv[])
 		disturbParameters(temp,cnew,sv,nsz*N_STRIPES,0.001);
 
 		/* Function to update velocity model */
-		/* TODO change tmp variable name to grad z*/
-		//updateCubicSplineVelModel(slow, n, o, d, nsz, sz, cnew, tmp[0], v0, N_STRIPES);
-
 		interpolateSlowModel(n, o, d,sv,sz,slow,nsz,N_STRIPES,v0,tmp[0]);
-		/*for(im=0;im<nm;im++){
-			slow[im] = sqrt(1.0/slow[im]);
-		}*/
+
 		tmis=0;
 	
 		/* Calculate time missfit through forward modeling */		
@@ -240,20 +234,8 @@ int main(int argc, char* argv[])
 
 	} /* loop over VFSA iterations */
 
-	/* Print optimal velocity gradient
-	if(verb){
-		sf_warning("Result: Best time misfit (%f)",tmis0);
-		for(im=0;im<nsz;im++)
-			sf_warning("z=%f v=%f",sz[im],ots[im]);
-	}*/
-
 	/* Generate optimal velocity model */
 	interpolateVelModel(n, o, d,sv,sz,slow,nsz,N_STRIPES,v0,tmp[0]);
-	
-	/* Convert slowness to velocity */
-	//for(im=0;im<nm;im++){
-	//	slow[im] = sqrt(1.0/slow[im]);
-	//}
 
 	/* Write velocity model file */
 	sf_floatwrite(slow,nm,velinv);

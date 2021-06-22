@@ -108,9 +108,10 @@ for a set of points (z,vz) given. TODO
 
  >*/
 {
-	int i, j=0, ic, k;
+	int i, j=0, k;
+	//int ic;
 	float z=0.0;
-	float** coef;
+	//float** coef;
 	float v[n_stripes][n[0]];
 	int app, app_len=n[1]/n_stripes;
 
@@ -127,7 +128,7 @@ for a set of points (z,vz) given. TODO
 
 		for(i=1;i<dim;i++){
 			
-			ic = (i-1)*4;
+			//ic = (i-1)*4;
 
 			while(z<=sz[i]){
 				z = (j*d[0]+o[0])-sz[i-1];
@@ -305,91 +306,63 @@ traveltime approximation to calculate the time misfit returned by the function.
 void interpolateVelModel(  int *n, /* Velocity model dimension n1=n[0] n2=n[1] */
 			   float *o, /* Velocity model axis origin o1=o[0] o2=o[1] */
 			   float *d, /* Velocity model sampling d1=d[0] d2=d[1] */
-			   float *sv, /* Slowness velociy model */
-			   float *sz,
-			   float *slow,
-			   int nsz,
-			   int nsx,
-			   float v0,
-			   float gzbg)
-/*< TODO to finish this function >*/
+			   float *sv, /* Velocity model disturbance */
+			   float *sz, /* Depth coordinates of sv vector */
+			   float *slow, /* Velocity model */
+			   int nsz, /* sv n1 dimwnsion */
+			   int nsx, /* sv n2 dimension */
+			   float v0, /* Near surface velocity */
+			   float gzbg /* Depth velocity gradient */)
+/*< Velocity model interpolation
+Note: This function uses a sv control points grid to obtain the complete
+velocity model matrix through eno 2D interpolation. The sv vector is the
+velocity disturbance of a constant velocity depth gradient model, that
+velocity increases linearly with depth for gzbg gradient given.
+ >*/
 {
 
-	sf_eno2 map;
-	float *f, f2[2];
-	int k, i, j, i1, i2;
-	float x, y;
+	int i, j;
 
 	/* Calculate velocity function */
-        for(k=0;k<nsx;k++){
+        for(j=0;j<nsx;j++){
 
                 for(i=0;i<nsz;i++){
 
-			sv[(k*nsz)+i] = v0+gzbg*sz[i]+sv[(k*nsz)+i];
+			sv[(j*nsz)+i] = v0+gzbg*sz[i]+sv[(j*nsz)+i];
                 }
 
 	}
 
-
-	map = sf_eno2_init(3,nsz,nsx);
-
-	sf_eno2_set1(map,sv);
-
-        for(i2=0;i2<n[1];i2++){
-
-                for(i1=0;i1<n[0];i1++){
-                        x = i1*d[0]; i=x; x -= i;
-                        y = i2*d[1]; j=y; y -= j;
-                        sf_eno2_apply(map,i,j,x,y,&slow[i2*n[0]+i1],f2,FUNC);
-                }
-        }
-        sf_eno2_close(map);
+	/* Interpolate velocity matrix */
+	enoInterpolation2d(n,o,d,sv,slow,nsz,nsx);
 }
 
-void interpolateSlowModel(  int *n, /* Velocity model dimension n1=n[0] n2=n[1] */
+void interpolateSlowModel( int *n, /* Velocity model dimension n1=n[0] n2=n[1] */
 			   float *o, /* Velocity model axis origin o1=o[0] o2=o[1] */
 			   float *d, /* Velocity model sampling d1=d[0] d2=d[1] */
-			   float *sv, /* Slowness velociy model */
-			   float *sz,
-			   float *slow,
-			   int nsz,
-			   int nsx,
-			   float v0,
-			   float gzbg)
-/*< TODO to finish this function >*/
+			   float *sv, /* Velociy disturbance */
+			   float *sz, /* Depth coordinate of disturbance */
+			   float *slow, /* Slowness model */
+			   int nsz, /* n1 dimension of sv */
+			   int nsx, /* n2 dimension of sv */
+			   float v0, /* Near surface velocity */
+			   float gzbg /* Background gradient in depth */)
+/*< Slowness model interpolation
+Note: This function uses a sv control points grid to obtain the complete
+slowness model matrix through eno 2D interpolation. The sv vector is the
+velocity disturbance of a constant velocity depth gradient model, that
+velocity increases linearly with depth for gzbg gradient given.
+ >*/
 {
 
-	sf_eno2 map;
-	float *f, f2[2];
-	int k, i, j, i1, i2, im;
-	float x, y;
+	int i, nm; // Loop counters and indexes
 
-	/* Calculate velocity function */
-        for(k=0;k<nsx;k++){
+	interpolateVelModel(n, o, d,sv,sz,slow,nsz,nsx,v0,gzbg);
 
-                for(i=0;i<nsz;i++){
-
-			sv[(k*nsz)+i] = v0+gzbg*sz[i]+sv[(k*nsz)+i];
-                }
-
-	}
-
-
-	map = sf_eno2_init(3,nsz,nsx);
-
-	sf_eno2_set1(map,sv);
-
-        for(i2=0;i2<n[1];i2++){
-
-                for(i1=0;i1<n[0];i1++){
-                        x = i1*d[0]; i=x; x -= i;
-                        y = i2*d[1]; j=y; y -= j;
-                        sf_eno2_apply(map,i,j,x,y,&slow[i2*n[0]+i1],f2,FUNC);
-                }
-        }
-        sf_eno2_close(map);
-	for(im=0;im<(n[0]*n[1]);im++){
-			slow[im] = 1.0/(slow[im]*slow[im]);
+	/* transform velocity to slowness */
+	nm =n[0]*n[1];
+	for(i=0;i<nm;i++){
+			slow[i] = 1.0/(slow[i]*slow[i]);
 	}
 }
 
@@ -400,7 +373,12 @@ void enoInterpolation2d(int *n, /* Interpolated vector dimension n1=n[0] n2=n[1]
 			float *iv, /* Interpolated vector */
 			int nov1, /* Original vector n1 dimension */
 			int nov2 /* Orignanl vector n2 dimension */)
-/*< TODO to finish this function >*/
+/*< Eno interpolation 2D function
+Note: This function interpolates a vector increasing the number of
+samples in the interpolated vector using eno interpolation. This vector
+is a 2D matrix stored in a vector ov by columns (ov[j*n1+i]) and the new
+vector iv will be the interpolated vector.
+ >*/
 {
 
 	sf_eno2 map;
@@ -415,8 +393,8 @@ void enoInterpolation2d(int *n, /* Interpolated vector dimension n1=n[0] n2=n[1]
         for(i2=0;i2<n[1];i2++){
 
                 for(i1=0;i1<n[0];i1++){
-                        x = i1*d[0]; i=x; x -= i;
-                        y = i2*d[1]; j=y; y -= j;
+                        x = i1*d[0]+o[0]; i=x; x -= i;
+                        y = i2*d[1]+o[1]; j=y; y -= j;
                         sf_eno2_apply(map,i,j,x,y,&iv[i2*n[0]+i1],f2,FUNC);
                 }
         }

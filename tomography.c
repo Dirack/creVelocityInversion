@@ -298,8 +298,8 @@ traveltime approximation to calculate the time misfit returned by the function.
 
 	} /* Loop over NIP sources */
 
-	/* TODO: Evaluate the best function to calcullate the time misfit */
-	tmis = (tmis*tmis)/(nr*ns);
+	/* L2 norm to evaluate the time misfit */
+	tmis = sqrt(tmis*tmis);
 	return tmis;
 }
 

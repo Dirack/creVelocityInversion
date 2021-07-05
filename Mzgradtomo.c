@@ -1,8 +1,6 @@
 /* VFSA Depth velocity gradient inversion - First iteration of stereoniptomo program
 
-This program uses Very Fast Simulated Annealing (VFSA) to obtain the depth velocity gradient
-for a linear velocity model that velocity varies with depth. This is the background model used
-as the first iteration for sfstereoniptomo program.
+This program uses Very Fast Simulated Annealing (VFSA) to obtain the depth velocity gradient for a linear velocity model that velocity varies with depth. This is the background model used as the first iteration for sfstereoniptomo program.
 
 */
 

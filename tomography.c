@@ -5,6 +5,9 @@
 #include "raytrace.h"
 #include "tomography.h"
 
+#define NR 5
+#define NT 5000
+#define DT 0.001
 #ifndef GDB_DEBUG
 	#define DSLOW 0.04
 	#define DANGLE 1.0
@@ -213,7 +216,7 @@ float calculateTimeMissfit(float** s, /* NIP sources matrix (z,x) pairs */
 			   float *o, /* Velocity model axis origin o1=o[0] o2=o[1] */
 			   float *d, /* Velocity model sampling d1=d[0] d2=d[1] */
 			   float *slow, /* Slowness velociy model */
-			   float *a, /* Normal ray angle for each NIP source */
+			   float *a, /* Normal ray angle for each NIP source (degrees) */
 			   int ns /* Number of NIP sources */)
 /*< Return time missfit sum of source-NIP-receiver rays 
 
@@ -224,17 +227,24 @@ traveltime approximation to calculate the time misfit returned by the function.
  >*/
 {
 
-	float currentRayAngle;
-	int i, ir, it, is;
-	float p[2], t, nrdeg;
-	/* TODO buil another way to define nt and nr and to define its best values */
-	int nt=5000; // TODO nt is the number of time samples in each ray
-	int nr=5; //TODO nr is the number of ray pairs for each source
-	float dt=0.001;
-	raytrace rt;
+	float currentRayAngle; // Emergence angle from source (radians)
+	int i, ir, it, is; // loop counters
+	float p[2]; // slowness vector
+	float t; // Ray traveltime
+	float nrdeg; // Emergence angle in degrees
+	int nt=NT; // number of time samples in each ray
+	int nr=NR; // number of reflection ray pairs for each source
+	float dt=DT; // time sampling of rays
+	raytrace rt; // raytrace struct
 	float** traj; // Ray trajectory (z,x)
-	float m, h, tmis=0;
-	float xs, xr, tr, ts, *x;
+	float m; // CMP
+	float h; // half-offset
+	float tmis=0; // time misfit
+	float xs; // Source position
+	float xr; // Receiver position
+	float tr; // NIP to receiver ray traveltime
+	float ts; // NIP to source ray traveltime
+	float *x; // Source position (z,x)
 
 	x = sf_floatalloc(2);
 
@@ -242,7 +252,7 @@ traveltime approximation to calculate the time misfit returned by the function.
 
 		x[0]=s[is][0];
 		x[1]=s[is][1];
-		nrdeg = a[is]; // TODO verify is it in degree?
+		nrdeg = a[is]; // angle in degree
 
 		for(ir=0;ir<nr;ir++){
 
@@ -254,8 +264,13 @@ traveltime approximation to calculate the time misfit returned by the function.
 				traj = sf_floatalloc2(2,nt+1);
 				
 				/* initialize ray direction */
-				/* TODO this part is confusing */
-				currentRayAngle=(i==0)?(nrdeg-(ir+1)*DANGLE)*DEG2RAD:(nrdeg+(ir+1)*DANGLE)*DEG2RAD;
+				if(i==0){
+					// NIP to source ray
+					currentRayAngle=(nrdeg-(ir+1)*DANGLE)*DEG2RAD;
+				}else{
+					// NIP to receiver ray
+					currentRayAngle=(nrdeg+(ir+1)*DANGLE)*DEG2RAD;
+				}
 
 				p[0] = -cosf(currentRayAngle);
 				p[1] = sinf(currentRayAngle);
@@ -265,17 +280,17 @@ traveltime approximation to calculate the time misfit returned by the function.
 
 				if(it>0){
 					t = it*dt;
-					if(i==0){
+					if(i==0){ // Keep NIP to source ray traveltime
 						ts=t;
 						xs=x[1];
-					}else{ 
+					}else{ // Keep NIP to receiver ray traveltime
 						tr=t;
 						xr=x[1];
 					}
-				}else if(it == 0){
+				}else if(it == 0){ // Ray endpoint inside model
 					t = abs(nt)*dt;
 					nt += 1000;
-				}else{
+				}else{ // Side or bottom ray
 					/* TODO to correct the way you treat side rays */
 					sf_warning("=> x=%f y=%f t=%f",s[1],s[0],t);
 					sf_error("Bad angle, ray get to the model side/bottom");

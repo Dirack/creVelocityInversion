@@ -49,7 +49,7 @@ int main(int argc, char* argv[])
 	float* sz; // Depth coordinates of the spline velocity function
 	int nsz; // Dimension of sz vector
 	float* sv; // Velocity coordinates of the spline velocity function
-	float* tmp; // Temporary vector to build cubic spline velocity matrix
+	float* gz; // Depth velocity gradient for backgorund velocity model
 	sf_file shots; // NIP sources (z,x)
 	sf_file vel; // background velocity model
 	sf_file velinv; // Inverted velocity model
@@ -59,7 +59,7 @@ int main(int argc, char* argv[])
 	sf_file rnips; // RNIP parameter for each m0
 	sf_file betas; // BETA parameter for each m0
 	sf_file sz_file; // z coordinates of the cubic spline functions
-	sf_file gz; // Depth velocity gradient for background model
+	sf_file gradz; // Depth velocity gradient for background model
 	sf_file vspline; // Cubic spline velocity model
 
 
@@ -75,7 +75,7 @@ int main(int argc, char* argv[])
 	rnips = sf_input("rnips");
 	betas = sf_input("betas");
 	sz_file = sf_input("sz");
-	gz = sf_input("gz");
+	gradz = sf_input("gz");
 
 	/* Velocity model: get 2D grid parameters */
 	if(!sf_histint(vel,"n1",n)) sf_error("No n1= in input");
@@ -112,17 +112,16 @@ int main(int argc, char* argv[])
 	if(!sf_histint(sz_file,"n1",&nsz)) sf_error("No n1= in sz file");
 	
 	/* Build cubic spline velocity matrix */
-	tmp = sf_floatalloc(1);
-	sf_floatread(tmp,1,gz);
+	gz = sf_floatalloc(1);
+	sf_floatread(gz,1,gradz);
 	sv = sf_floatalloc(N_STRIPES*nsz);
 
 	sz = sf_floatalloc(nsz);
 	sf_floatread(sz,nsz,sz_file);
 
-	/* TODO change sv to delta v spline (disturb in bg model) */
+	/* Initialize sv, the disturbance matrix in background model */
 	for(k=0;k<N_STRIPES;k++){
 		for(i=0;i<nsz;i++){
-			//sv[(k*nsz)+i]=v0+tmp[0]*sz[i];
 			sv[(k*nsz)+i]=0.0;
 		}
 	}
@@ -197,7 +196,7 @@ int main(int argc, char* argv[])
 		disturbParameters(temp,cnew,sv,nsz*N_STRIPES,0.001);
 
 		/* Function to update velocity model */
-		interpolateSlowModel(n, o, d,sv,sz,slow,nsz,N_STRIPES,v0,tmp[0]);
+		interpolateSlowModel(n, o, d,sv,sz,slow,nsz,N_STRIPES,v0,gz[0]);
 
 		tmis=0;
 	
@@ -236,7 +235,7 @@ int main(int argc, char* argv[])
 	} /* loop over VFSA iterations */
 
 	/* Generate optimal velocity model */
-	interpolateVelModel(n, o, d,sv,sz,slow,nsz,N_STRIPES,v0,tmp[0]);
+	interpolateVelModel(n, o, d,sv,sz,slow,nsz,N_STRIPES,v0,gz[0]);
 
 	/* Write velocity model file */
 	sf_floatwrite(slow,nm,velinv);

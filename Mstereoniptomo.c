@@ -12,6 +12,17 @@ The time misfit is calculated by the difference between the reflection traveltim
 #include "vfsacrsnh_lib.h"
 #define N_STRIPES 50
 
+void (*updateVelocityModel)(int*, /* Velocity model dimension n1=n[0] n2=n[1] */
+			   float*, /* Velocity model axis origin o1=o[0] o2=o[1] */
+			   float*, /* Velocity model sampling d1=d[0] d2=d[1] */
+			   float*, /* Velocity model disturbance */
+			   float*, /* Depth coordinates of sv vector */
+			   float*, /* Velocity model */
+			   int, /* sv n1 dimwnsion */
+			   int, /* sv n2 dimension */
+			   float, /* Near surface velocity */
+			   float/* Depth velocity gradient */);
+
 int main(int argc, char* argv[])
 {
 	bool verb; // Verbose parameter
@@ -62,6 +73,7 @@ int main(int argc, char* argv[])
 	sf_file gradz; // Depth velocity gradient for background model
 	sf_file vspline; // Cubic spline velocity model
 
+	updateVelocityModel = interpolateSlowModel;
 
 	sf_init(argc,argv);
 
@@ -196,7 +208,8 @@ int main(int argc, char* argv[])
 		disturbParameters(temp,cnew,sv,nsz*N_STRIPES,0.001);
 
 		/* Function to update velocity model */
-		interpolateSlowModel(n, o, d,sv,sz,slow,nsz,N_STRIPES,v0,gz[0]);
+		updateVelocityModel(n,o,d,sv,sz,slow,nsz,N_STRIPES,v0,gz[0]);
+		//interpolateSlowModel(n, o, d,sv,sz,slow,nsz,N_STRIPES,v0,gz[0]);
 
 		tmis=0;
 	

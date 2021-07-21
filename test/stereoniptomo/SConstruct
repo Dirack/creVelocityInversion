@@ -47,6 +47,18 @@ mlmod(interfaces='interfaces',
         layers=layers,
         velocities=velocities)
 
+# Generate interfaces files to plot with viewNipSources.py
+Flow('modelin1.txt','interfaces',
+        '''
+        window n2=1 f2=0 |
+        disfil format="%f " number=n col=1
+        ''')
+
+Flow('modelin2.txt','interfaces',
+        '''
+        window n2=1 f2=1 |
+        disfil format="%f " number=n col=1
+        ''')
 
 # Constant velocity model for stereoniptomo
 Flow(model,None,

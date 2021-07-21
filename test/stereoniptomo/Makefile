@@ -16,8 +16,8 @@
 NI=10
 
 # model files: Stacked section and parameters cube from CRE stack
-PARCUBE=model2/parametersCube.rsf
-STKSEC=model2/stackedSection.rsf
+PARCUBE=model/parametersCube.rsf
+STKSEC=model/stackedSection.rsf
 
 # Extract parameters from stacked section
 NP=$(shell (<stackedSection.asc sfget n1 n2; echo "n1*n2") | bc)
@@ -30,7 +30,7 @@ O2=$(shell <stackedSection.asc sfget o2 parform=n)
 PARAM=np=$(NP) n1=$(N1) d1=$(D1) o1=$(O1) n2=$(N2) d2=$(D2) o2=$(O2)
 
 # Run the experiment
-all:
+all:	stackedSection.asc parametersCube.asc
 	scons -f SConscript1 $(PARAM)
 	scons ns=$(shell wc -l pick.txt | cut -d" " -f1) ni=$(NI)
 	scons -f SConscript2
@@ -53,3 +53,16 @@ backup:
 picking:	stackedSection.asc
 	scons -f SConscript1 $(PARAM) stackedSection.rsf
 	<stackedSection.rsf sfipick > pick.txt
+
+stackedSection.asc:	$(STKSEC:.rsf=.asc)
+	cp $< $@
+
+parametersCube.asc:	$(PARCUBE:.rsf=.asc)
+	cp $< $@
+
+clean:
+	scons -c
+	sfrm *.rsf
+	rm *.asc *.txt
+
+.PHONY:	clean

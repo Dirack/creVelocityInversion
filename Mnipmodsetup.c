@@ -93,9 +93,8 @@ int main(int argc, char* argv[])
 		slow[im] = 1./(v0*v0);
 	}
 
-	sf_putint(rays,"n1",nr);
-	sf_putint(rays,"n2",1);
-	sf_settype(rays,SF_COMPLEX);
+	sf_putint(rays,"n1",ndim);
+	sf_putint(rays,"n2",nshot);
 	sf_putstring(rays,"label1","Position");
 	sf_putstring(rays,"unit1","z,x");
 	sf_putstring(rays,"label2","Degrees");
@@ -142,7 +141,7 @@ int main(int argc, char* argv[])
 		it = trace_ray (rt, x, p, traj);
 
 		/* write ray end points */
-		sf_floatwrite (traj[nt-1],ndim,rays);
+		sf_floatwrite (traj[nt-1],ndim*nshot,rays);
 
 		/* write escape angles */
 		if(it>0){

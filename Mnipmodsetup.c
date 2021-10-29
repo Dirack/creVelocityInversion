@@ -36,6 +36,8 @@ int main(int argc, char* argv[])
 	float x[2]; // Ray initial position
 	float p[2]; // Ray initial slowness vector
 	int i; // loop counter
+	bool drawray; // Output all ray trajectory or ray endpoints
+	int ntray=0; // Number of time samples in ray vector
 	sf_file shots, vel, rays, angles, t0s, nipangles;
 	raytrace rt;
 
@@ -58,6 +60,9 @@ int main(int argc, char* argv[])
 	
 	if(!sf_getbool("verb",&verb)) verb=true;
 	/* verbose */
+
+	if(!sf_getbool("drawray",&drawray)) drawray=false;
+	/* Output all ray trajectory (y) or ray endpoints (n) */
 
 	/* Shotsfile: get m0 shot points */
 	if(!sf_histint(shots,"n1",&ndim) || 2 != ndim)
@@ -140,8 +145,19 @@ int main(int argc, char* argv[])
 
 		it = trace_ray (rt, x, p, traj);
 
-		/* write ray end points */
-		sf_floatwrite (traj[nt-1],ndim*nshot,rays);
+		if(drawray){
+			ntray+=nt;
+			/* write all ray trajectory */
+			for(i=0;i<nt;i++){
+				t = traj[i][0];
+				sf_floatwrite(&t,1,rays);
+				t = traj[i][1];
+				sf_floatwrite(&t,1,rays);
+			}
+		}else{
+			/* write ray end points */
+			sf_floatwrite (traj[nt-1],ndim,rays);
+		}
 
 		/* write escape angles */
 		if(it>0){
@@ -166,5 +182,9 @@ int main(int argc, char* argv[])
 		/* Raytrace close */
 		raytrace_close(rt);
 		free(traj);
+	}
+	
+	if(drawray){
+		sf_warning("NTRAY=%d",ntray);
 	}
 }

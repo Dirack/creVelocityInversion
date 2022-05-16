@@ -8,7 +8,7 @@ This program uses Very Fast Simulated Annealing (VFSA) to obtain the depth veloc
 #include <rsf.h>
 #include "tomography.h"
 #include "zgradvfsa_lib.h"
-#define MAX_ITERATIONS 30
+#define MAX_ITERATIONS 100
 #define temp0 5
 #define c0 0.1
 
@@ -178,7 +178,7 @@ int main(int argc, char* argv[])
 			}	
 		}	
 			
-		sf_warning("%f => %d/%d (%f)",gz,q,MAX_ITERATIONS,otmis);	
+		sf_warning("%f => %d/%d (%f);",gz,q,MAX_ITERATIONS,otmis);	
 
 	} /* loop over VFSA iterations */
 

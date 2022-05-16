@@ -8,6 +8,10 @@ progs = '''
 nipmodsetup stereoniptomo getparameter zgradtomo
 '''
 
+pyprogs = '''
+ascformat
+'''
+
 try:  # distributed version
     Import('env root pkgdir bindir')
     env = env.Clone()
@@ -75,13 +79,26 @@ for prog in mains:
         env.Install(bindir,prog)
 
 ######################################################################
+# PYTHON METAPROGRAMS (python API not needed)
+######################################################################
+
+if root: # no compilation, just rename
+    pymains = Split(pyprogs)
+    exe = env.get('PROGSUFFIX','')
+    for prog in pymains:
+        binary = os.path.join(bindir,'sf'+prog+exe)
+        env.InstallAs(binary,'M'+prog+'.py')
+        env.AddPostAction(binary,Chmod(str(binary),0o755))
+
+######################################################################
 # SELF-DOCUMENTATION
 ######################################################################
 if root:
     user = os.path.basename(os.getcwd())
     main = 'sf%s.py' % user
 
-    docs = [env.Doc(prog,'M' + prog) for prog in mains]
+    docs = [env.Doc(prog,'M' + prog) for prog in mains] + \
+	   [env.Doc(prog,'M'+prog+'.py',lang='python') for prog in pymains]
     env.Depends(docs,'#/framework/rsf/doc.py')
 
     doc = env.RSF_Docmerge(main,docs)

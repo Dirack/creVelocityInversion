@@ -230,7 +230,7 @@ traveltime approximation to calculate the time misfit returned by the function.
 	float currentRayAngle; // Emergence angle from source (radians)
 	int i, ir, it, is; // loop counters
 	float p[2]; // slowness vector
-	float t; // Ray traveltime
+	float t=0.; // Ray traveltime
 	float nrdeg; // Emergence angle in degrees
 	int nt=NT; // number of time samples in each ray
 	int nr=NR; // number of reflection ray pairs for each source
@@ -241,8 +241,8 @@ traveltime approximation to calculate the time misfit returned by the function.
 	float h; // half-offset
 	float tmis=0; // time misfit
 	float xs; // Source position
-	float xr; // Receiver position
-	float tr; // NIP to receiver ray traveltime
+	float xr=0.; // Receiver position
+	float tr=0.; // NIP to receiver ray traveltime
 	float ts; // NIP to source ray traveltime
 	float *x; // Source position (z,x)
 
@@ -292,7 +292,12 @@ traveltime approximation to calculate the time misfit returned by the function.
 					nt += 1000;
 				}else{ // Side or bottom ray
 					/* TODO to correct the way you treat side rays */
-					sf_warning("=> x=%f y=%f t=%f",s[1],s[0],t);
+					sf_warning("BAD RAY ANGLE IN ZGRAD INVERSION");
+					sf_warning("From: x=%f z=%f",s[is][0],s[is][1]);
+					sf_warning("To: x=%f z=%f",s[is][0],s[is][1]);
+					sf_warning("Traveltime (s): %f",t);
+					sf_warning("Starting angle (degrees): %.2f",currentRayAngle*180./SF_PI);
+					sf_warning("Escape angle (degrees): %.2f",currentRayAngle*180./SF_PI);
 					sf_error("Bad angle, ray get to the model side/bottom");
 				}
 

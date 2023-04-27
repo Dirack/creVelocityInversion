@@ -60,7 +60,7 @@ int main(int argc, char* argv[])
 		
 		if(beta){
 			a[i] = (par[im0][it0])*RAD2DEG;
-			a[i]=180-a[i];
+			a[i]+=180.;
 		}else{
 			a[i] = par[im0][it0];
 		}

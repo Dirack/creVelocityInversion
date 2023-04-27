@@ -172,8 +172,22 @@ int main(int argc, char* argv[])
 			t = acos(x[0]/t);
 			if(x[1]<0) t = -t;
 		}else{
-			t = a[ir];
+			//t = abs(nt)*dt;
+			/* Escape vector */
+			it=nt-1;
+			i=it-2;
+			x[0]=traj[it][0];
+			x[1]=traj[it][1];
+			x[0]-=traj[i][0];
+			x[1]-=traj[i][1];
+			/* Dot product with unit vector pointing upward */
+			t = sqrt(x[0]*x[0]+x[1]*x[1]); /* Length */
+			t = acos(x[0]/t);
+			if(x[1]<0) t = -t;
+
+			//t+=SF_PI;
 			t /= DEG2RAD;
+			//sf_warning()
 		}
 
 		/* Write angles in the ray endpoints */
